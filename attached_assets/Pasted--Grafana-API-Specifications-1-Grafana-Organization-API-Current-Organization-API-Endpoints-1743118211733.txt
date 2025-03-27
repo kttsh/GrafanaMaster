@@ -1,0 +1,125 @@
+# Grafana API Specifications
+
+## 1. Grafana Organization API
+
+### Current Organization API Endpoints
+
+| Endpoint | Method | Description | Authentication | Required Permissions |
+|----------|--------|-------------|----------------|---------------------|
+| `/api/org/` | GET | Get current organization | Bearer token | `orgs:read` |
+| `/api/org/users` | GET | Get all users within current organization | Bearer token | `org.users:read` for scope `users:*` |
+| `/api/org/users/lookup` | GET | Get all users (simplified info) | Bearer token | `org.users:read` for scope `users:*` |
+| `/api/org/users/:userId` | PATCH | Update user in current organization | Bearer token | `org.users:write` for scope `users:*` |
+| `/api/org/users/:userId` | DELETE | Delete user from current organization | Bearer token | `org.users:remove` for scope `users:*` |
+| `/api/org` | PUT | Update current organization | Bearer token | `orgs:write` |
+| `/api/org/users` | POST | Add a new user to current organization | Bearer token | `org.users:add` for scope `users:*` |
+
+### Admin Organizations API Endpoints
+
+| Endpoint | Method | Description | Authentication | Required Permissions |
+|----------|--------|-------------|----------------|---------------------|
+| `/api/orgs/:orgId` | GET | Get organization by ID | Basic Auth (Admin) | `orgs:read` |
+| `/api/orgs/name/:orgName` | GET | Get organization by name | Basic Auth (Admin) | `orgs:read` |
+| `/api/orgs` | POST | Create organization | Basic Auth (Admin) | `orgs:create` |
+| `/api/orgs` | GET | Search all organizations | Basic Auth (Admin) | `orgs:read` |
+| `/api/orgs/:orgId` | PUT | Update organization | Basic Auth (Admin) | `orgs:write` |
+| `/api/orgs/:orgId` | DELETE | Delete organization | Basic Auth (Admin) | `orgs:delete` |
+| `/api/orgs/:orgId/users` | GET | Get users in organization | Basic Auth (Admin) | `org.users:read` for scope `users:*` |
+| `/api/orgs/:orgId/users` | POST | Add user to organization | Basic Auth (Admin) | `org.users:add` for scope `users:*` |
+| `/api/orgs/:orgId/users/:userId` | PATCH | Update user in organization | Basic Auth (Admin) | `org.users:write` for scope `users:*` |
+| `/api/orgs/:orgId/users/:userId` | DELETE | Delete user from organization | Basic Auth (Admin) | `org.users:remove` for scope `users:*` |
+
+## 2. Grafana Team API
+
+| Endpoint | Method | Description | Authentication | Required Permissions |
+|----------|--------|-------------|----------------|---------------------|
+| `/api/teams/search` | GET | Team search with paging | Bearer token | `teams:read` for scope `teams:*` |
+| `/api/teams/:id` | GET | Get team by ID | Bearer token | `teams:read` for scope `teams:*` |
+| `/api/teams` | POST | Add team | Bearer token | `teams:create` |
+| `/api/teams/:id` | PUT | Update team | Bearer token | `teams:write` for scope `teams:*` |
+| `/api/teams/:id` | DELETE | Delete team | Bearer token | `teams:delete` for scope `teams:*` |
+| `/api/teams/:teamId/members` | GET | Get team members | Bearer token | `teams.permissions:read` for scope `teams:*` |
+| `/api/teams/:teamId/members` | POST | Add team member | Bearer token | `teams.permissions:write` for scope `teams:*` |
+| `/api/teams/:teamId/members/:userId` | DELETE | Remove member from team | Bearer token | `teams.permissions:write` for scope `teams:*` |
+| `/api/teams/:teamId/members` | PUT | Bulk update team members | Bearer token | `teams.permissions:write` for scope `teams:*` |
+| `/api/teams/:teamId/preferences` | GET | Get team preferences | Bearer token | `teams:read` for scope `teams:*` |
+| `/api/teams/:teamId/preferences` | PUT | Update team preferences | Bearer token | `teams:write` for scope `teams:*` |
+
+## 3. Grafana User API
+
+### Admin User API Endpoints
+
+| Endpoint | Method | Description | Authentication | Required Permissions |
+|----------|--------|-------------|----------------|---------------------|
+| `/api/users` | GET | Search users | Basic Auth (Admin) | `users:read` for scope `global.users:*` |
+| `/api/users/search` | GET | Search users with paging | Basic Auth (Admin) | `users:read` for scope `global.users:*` |
+| `/api/users/:id` | GET | Get single user by ID | Basic Auth (Admin) | `users:read` for scope `global.users:*` |
+| `/api/users/lookup` | GET | Get user by username or email | Basic Auth (Admin) | `users:read` for scope `global.users:*` |
+| `/api/users/:id` | PUT | Update user | Basic Auth (Admin) | `users:write` for scope `global.users:*` |
+| `/api/users/:id/orgs` | GET | Get organizations for user | Basic Auth (Admin) | `users:read` for scope `global.users:*` |
+| `/api/users/:id/teams` | GET | Get teams for user | Basic Auth (Admin) | `users:read` for scope `global.users:*` and `teams:read` for scope `teams:*` |
+
+### Current User API Endpoints
+
+| Endpoint | Method | Description | Authentication |
+|----------|--------|-------------|----------------|
+| `/api/user` | GET | Get current user | Bearer token |
+| `/api/user/password` | PUT | Change password | Bearer token |
+| `/api/users/:userId/using/:organizationId` | POST | Switch user context for specified user | Basic Auth (Admin) |
+| `/api/user/using/:organizationId` | POST | Switch user context for signed in user | Bearer token |
+| `/api/user/orgs` | GET | Get organizations of current user | Bearer token |
+| `/api/user/teams` | GET | Get teams for current user | Bearer token |
+| `/api/user/stars/dashboard/uid/:uid` | POST | Star a dashboard | Bearer token |
+| `/api/user/stars/dashboard/uid/:uid` | DELETE | Unstar a dashboard | Bearer token |
+| `/api/user/auth-tokens` | GET | Get auth tokens of current user | Bearer token |
+| `/api/user/revoke-auth-token` | POST | Revoke an auth token of current user | Bearer token |
+
+# Opoppo Database Table Specifications
+
+## Database: OPO_C on server muska01
+
+### 1. USER Table
+| Column Name | Data Type | Description | Constraints |
+|-------------|-----------|-------------|------------|
+| USER_ID | VARCHAR | User identifier | Primary Key |
+| SEI | VARCHAR | Last name | Not Null |
+| MEI | VARCHAR | First name | Not Null |
+| YAKUSYOKU_CD | VARCHAR | Position/job title code | Foreign Key to YAKUSYOKU table |
+| KAISYA_CD | VARCHAR | Company code | Foreign Key to KAISYA table |
+| SOSHIKI_CD | VARCHAR | Organization/department code | Foreign Key to SOSHIKI table |
+
+### 2. YAKUSYOKU Table (Job Positions)
+| Column Name | Data Type | Description | Constraints |
+|-------------|-----------|-------------|------------|
+| KAISYA_CD | VARCHAR | Company code | Part of Composite Primary Key, Foreign Key to KAISYA table |
+| YAKUSYOKU_CD | VARCHAR | Position/job title code | Part of Composite Primary Key |
+| YAKUSYOKU_NM | VARCHAR | Position/job title name | Not Null |
+
+### 3. SOSHIKI Table (Organizational Units)
+| Column Name | Data Type | Description | Constraints |
+|-------------|-----------|-------------|------------|
+| KAISYA_CD | VARCHAR | Company code | Part of Composite Primary Key, Foreign Key to KAISYA table |
+| SOSHIKI_CD | VARCHAR | Organization/department code | Part of Composite Primary Key |
+| SOSHIKI_NM | VARCHAR | Organization/department name | Not Null |
+
+### 4. KAISYA Table (Companies)
+| Column Name | Data Type | Description | Constraints |
+|-------------|-----------|-------------|------------|
+| KAISYA_CD | VARCHAR | Company code | Primary Key |
+| KAISYA_NM | VARCHAR | Company name | Not Null |
+
+## Relationships
+- Each USER belongs to one KAISYA (company)
+- Each USER belongs to one SOSHIKI (department/organization) within their KAISYA
+- Each USER has one YAKUSYOKU (job position) within their KAISYA
+- YAKUSYOKU and SOSHIKI tables have composite primary keys including KAISYA_CD, allowing for different job positions and departments across different companies
+
+## Data Flow
+When synchronizing with Grafana:
+1. USER data provides the base user information
+2. JOIN with YAKUSYOKU to get the user's position name
+3. JOIN with SOSHIKI to get the user's department name
+4. JOIN with KAISYA to get the user's company name
+5. Map this organizational structure to Grafana organizations and teams as appropriate
+
+This database schema allows for a hierarchical organizational structure with users belonging to specific departments and positions within companies.

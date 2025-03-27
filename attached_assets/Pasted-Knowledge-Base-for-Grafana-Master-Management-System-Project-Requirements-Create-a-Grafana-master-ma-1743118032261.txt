@@ -1,0 +1,104 @@
+Knowledge Base for Grafana Master Management System
+Project Requirements
+
+Create a Grafana master management system
+Connect to internal user repository (Opoppo)
+Synchronize users from Opoppo to Grafana
+Display and manage Grafana organizations, users, and teams
+Show user activity (last login date etc.)
+Allow user registration with organization selection
+Use SQL Server for application database
+Windows Integrated Authentication for security
+
+Technical Stack
+
+Frontend: React, Vite, TailwindCSS, shadcn/ui, npm
+Backend: Go language
+Development Environment: Visual Studio
+Production Environment: Windows Server IIS
+Authentication: Integrated Windows Authentication
+Repository Type: Monorepo (frontend and backend in one repository)
+
+Database Information
+Opoppo Database Structure
+Database server: muska01
+Database name: OPO_C
+Tables:
+
+USER: USER_ID (PK), SEI, MEI, YAKUSYOKU_CD, KAISYA_CD, SOSHIKI_CD
+YAKUSYOKU: KAISYA_CD, YAKUSYOKU_CD (PK), YAKUSYOKU_NM
+SOSHIKI: KAISYA_CD, SOSHIKI_CD (PK), SOSHIKI_NM
+KAISYA: KAISYA_CD (PK), KAISYA_NM
+
+Grafana API Information
+Grafana provides several APIs:
+
+Organization API
+Team API
+User API
+
+Authentication for Grafana API requires admin credentials (Basic Auth).
+Implementation Details
+Authentication Flow
+
+User accesses the application through IIS
+Windows Integrated Authentication identifies the user
+User identity is passed to the backend via X-Remote-User header
+Backend uses the identity for logging and authorization
+
+Integration with Opoppo
+Backend connects to Opoppo database to:
+
+Retrieve user information (USER_ID, names, department, etc.)
+Map organizational structure to Grafana organizations
+Synchronize user accounts to Grafana via API
+
+Grafana Integration
+Backend connects to Grafana API to:
+
+Retrieve existing users, organizations, and teams
+Create new users based on Opoppo data
+Assign users to appropriate organizations
+Manage team memberships
+
+Application Database
+SQL Server database with tables for:
+
+Synchronization history and logs
+Cached Grafana entity data
+Mapping between Opoppo and Grafana users
+Application settings and configuration
+
+Key Components
+Backend API Endpoints
+
+/api/users/opoppo - Get users from Opoppo DB
+/api/users/grafana - Get/create/delete Grafana users
+/api/orgs/grafana - Get Grafana organizations
+/api/teams/grafana - Get Grafana teams
+/api/sync - Synchronize users between systems
+
+Frontend Pages
+
+Dashboard - Overview with key metrics
+Users - Manage Grafana users
+Organizations - View/manage Grafana organizations
+Teams - View Grafana teams
+Sync - Control and view synchronization status
+
+Windows IIS Configuration
+
+Windows Authentication enabled
+Anonymous Authentication disabled
+URL Rewrite rules for SPA routing
+Custom header to forward user identity
+
+Database Schema Elements
+
+SyncHistory - Track synchronization operations
+GrafanaOrganizations - Cache organization data
+GrafanaUsers - Cache user data
+UserOrgMapping - Track user-organization relationships
+SyncLog - Detailed synchronization logs
+OpoUsersCache - Cache Opoppo user data
+Settings - Application configuration
