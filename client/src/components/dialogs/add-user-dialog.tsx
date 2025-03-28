@@ -297,6 +297,7 @@ export default function AddUserDialog({ isOpen, onClose }: AddUserDialogProps) {
                             {...field}
                             placeholder="Enter full name"
                             className="bg-grafana-dark border-grafana-dark-200 text-grafana-text"
+                            readOnly={!!form.getValues("name")}
                           />
                         </FormControl>
                         <FormMessage className="text-grafana-error" />
@@ -315,6 +316,7 @@ export default function AddUserDialog({ isOpen, onClose }: AddUserDialogProps) {
                             type="email"
                             placeholder="Enter email address"
                             className="bg-grafana-dark border-grafana-dark-200 text-grafana-text"
+                            readOnly={!!form.getValues("email")}
                           />
                         </FormControl>
                         <FormMessage className="text-grafana-error" />
@@ -332,6 +334,7 @@ export default function AddUserDialog({ isOpen, onClose }: AddUserDialogProps) {
                             {...field}
                             placeholder="Enter login username"
                             className="bg-grafana-dark border-grafana-dark-200 text-grafana-text"
+                            readOnly={!!form.getValues("login")}
                           />
                         </FormControl>
                         <FormMessage className="text-grafana-error" />
@@ -353,6 +356,7 @@ export default function AddUserDialog({ isOpen, onClose }: AddUserDialogProps) {
                             {...field}
                             placeholder="Enter company name"
                             className="bg-grafana-dark border-grafana-dark-200 text-grafana-text"
+                            readOnly={!!form.getValues("company")}
                           />
                         </FormControl>
                         <FormMessage className="text-grafana-error" />
@@ -370,6 +374,7 @@ export default function AddUserDialog({ isOpen, onClose }: AddUserDialogProps) {
                             {...field}
                             placeholder="Enter department"
                             className="bg-grafana-dark border-grafana-dark-200 text-grafana-text"
+                            readOnly={!!form.getValues("department")}
                           />
                         </FormControl>
                         <FormMessage className="text-grafana-error" />
@@ -387,6 +392,7 @@ export default function AddUserDialog({ isOpen, onClose }: AddUserDialogProps) {
                             {...field}
                             placeholder="Enter position"
                             className="bg-grafana-dark border-grafana-dark-200 text-grafana-text"
+                            readOnly={!!form.getValues("position")}
                           />
                         </FormControl>
                         <FormMessage className="text-grafana-error" />
