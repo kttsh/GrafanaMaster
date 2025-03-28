@@ -1,13 +1,14 @@
-import { users, grafanaUsers, grafanaOrganizations, grafanaTeams, 
-  userOrganizationMemberships, userTeamMemberships, syncLogs, settings, 
-  type User, type InsertUser, type GrafanaUser, type InsertGrafanaUser, 
-  type GrafanaOrganization, type InsertGrafanaOrg, type GrafanaTeam, 
-  type InsertGrafanaTeam, type UserOrgMembership, type InsertUserOrgMembership,
-  type UserTeamMembership, type InsertUserTeamMembership, type SyncLog,
-  type InsertSyncLog, type Setting, type InsertSetting } from "@shared/schema";
-import { db } from "./db";
-import { eq, desc, and, like, sql as sqlFn } from "drizzle-orm";
-// 認証関連のimportを削除
+import { prisma } from "./db";
+import { 
+  type User, type InsertUser, 
+  type GrafanaUser, type InsertGrafanaUser, 
+  type GrafanaOrganization, type InsertGrafanaOrg, 
+  type GrafanaTeam, type InsertGrafanaTeam, 
+  type UserOrgMembership, type InsertUserOrgMembership,
+  type UserTeamMembership, type InsertUserTeamMembership, 
+  type SyncLog, type InsertSyncLog, 
+  type Setting, type InsertSetting 
+} from "../shared/types";
 
 export interface IStorage {
   // Auth user operations
@@ -63,252 +64,282 @@ export interface IStorage {
 
 export class DatabaseStorage implements IStorage {
   constructor() {
-    // セッション関連の実装を削除
+    // 初期化処理が必要な場合はここに記述
   }
   
   // Auth user operations
   async getUser(id: number): Promise<User | undefined> {
-    const [user] = await db.select().from(users).where(eq(users.id, id));
-    return user;
+    return await prisma.user.findUnique({
+      where: { id }
+    }) || undefined;
   }
   
   async getUserByUsername(username: string): Promise<User | undefined> {
-    const [user] = await db.select().from(users).where(eq(users.username, username));
-    return user;
+    return await prisma.user.findUnique({
+      where: { username }
+    }) || undefined;
   }
   
   async createUser(user: InsertUser): Promise<User> {
-    const [newUser] = await db.insert(users).values(user).returning();
-    return newUser;
+    return await prisma.user.create({
+      data: user
+    });
   }
   
   async updateUser(id: number, userData: Partial<User>): Promise<User | undefined> {
-    const [updatedUser] = await db
-      .update(users)
-      .set(userData)
-      .where(eq(users.id, id))
-      .returning();
-    return updatedUser;
+    return await prisma.user.update({
+      where: { id },
+      data: userData
+    });
   }
   
   async deleteUser(id: number): Promise<boolean> {
-    const result = await db.delete(users).where(eq(users.id, id));
+    await prisma.user.delete({
+      where: { id }
+    });
     return true;
   }
   
   // Grafana user operations
   async getGrafanaUser(id: number): Promise<GrafanaUser | undefined> {
-    const [user] = await db.select().from(grafanaUsers).where(eq(grafanaUsers.id, id));
-    return user;
+    return await prisma.grafanaUser.findUnique({
+      where: { id }
+    }) || undefined;
   }
   
   async getGrafanaUserByUserId(userId: string): Promise<GrafanaUser | undefined> {
-    const [user] = await db.select().from(grafanaUsers).where(eq(grafanaUsers.userId, userId));
-    return user;
+    return await prisma.grafanaUser.findUnique({
+      where: { userId }
+    }) || undefined;
   }
   
   async getGrafanaUsers(limit: number = 100, offset: number = 0, search?: string): Promise<GrafanaUser[]> {
-    let query = db.select().from(grafanaUsers).orderBy(desc(grafanaUsers.id)).limit(limit).offset(offset);
+    let where = {};
     
     if (search) {
-      query = query.where(
-        sqlFn`(${grafanaUsers.name} ILIKE ${`%${search}%`} OR ${grafanaUsers.email} ILIKE ${`%${search}%`} OR ${grafanaUsers.userId} ILIKE ${`%${search}%`})`
-      );
+      where = {
+        OR: [
+          { name: { contains: search } },
+          { email: { contains: search } },
+          { userId: { contains: search } }
+        ]
+      };
     }
     
-    return await query;
+    return await prisma.grafanaUser.findMany({
+      where,
+      orderBy: { id: 'desc' },
+      take: limit,
+      skip: offset
+    });
   }
   
   async countGrafanaUsers(search?: string): Promise<number> {
-    let query = db.select({ count: sqlFn`COUNT(*)` }).from(grafanaUsers);
+    let where = {};
     
     if (search) {
-      query = query.where(
-        sqlFn`(${grafanaUsers.name} ILIKE ${`%${search}%`} OR ${grafanaUsers.email} ILIKE ${`%${search}%`} OR ${grafanaUsers.userId} ILIKE ${`%${search}%`})`
-      );
+      where = {
+        OR: [
+          { name: { contains: search } },
+          { email: { contains: search } },
+          { userId: { contains: search } }
+        ]
+      };
     }
     
-    const result = await query;
-    return Number(result[0]?.count || 0);
+    return await prisma.grafanaUser.count({ where });
   }
   
   async createGrafanaUser(user: InsertGrafanaUser): Promise<GrafanaUser> {
-    const [newUser] = await db.insert(grafanaUsers).values(user).returning();
-    return newUser;
+    return await prisma.grafanaUser.create({
+      data: user
+    });
   }
   
   async updateGrafanaUser(id: number, userData: Partial<GrafanaUser>): Promise<GrafanaUser | undefined> {
-    const now = new Date();
-    const [updatedUser] = await db
-      .update(grafanaUsers)
-      .set({ ...userData, updatedAt: now })
-      .where(eq(grafanaUsers.id, id))
-      .returning();
-    return updatedUser;
+    return await prisma.grafanaUser.update({
+      where: { id },
+      data: {
+        ...userData,
+        updatedAt: new Date()
+      }
+    });
   }
   
   async deleteGrafanaUser(id: number): Promise<boolean> {
-    await db.delete(grafanaUsers).where(eq(grafanaUsers.id, id));
+    await prisma.grafanaUser.delete({
+      where: { id }
+    });
     return true;
   }
   
   // Grafana organization operations
   async getGrafanaOrganization(id: number): Promise<GrafanaOrganization | undefined> {
-    const [org] = await db.select().from(grafanaOrganizations).where(eq(grafanaOrganizations.id, id));
-    return org;
+    return await prisma.grafanaOrganization.findUnique({
+      where: { id }
+    }) || undefined;
   }
   
   async getGrafanaOrganizations(): Promise<GrafanaOrganization[]> {
-    return await db.select().from(grafanaOrganizations).orderBy(grafanaOrganizations.name);
+    return await prisma.grafanaOrganization.findMany({
+      orderBy: { name: 'asc' }
+    });
   }
   
   async createGrafanaOrganization(org: InsertGrafanaOrg): Promise<GrafanaOrganization> {
-    const [newOrg] = await db.insert(grafanaOrganizations).values(org).returning();
-    return newOrg;
+    return await prisma.grafanaOrganization.create({
+      data: org
+    });
   }
   
   async updateGrafanaOrganization(id: number, orgData: Partial<GrafanaOrganization>): Promise<GrafanaOrganization | undefined> {
-    const now = new Date();
-    const [updatedOrg] = await db
-      .update(grafanaOrganizations)
-      .set({ ...orgData, updatedAt: now })
-      .where(eq(grafanaOrganizations.id, id))
-      .returning();
-    return updatedOrg;
+    return await prisma.grafanaOrganization.update({
+      where: { id },
+      data: {
+        ...orgData,
+        updatedAt: new Date()
+      }
+    });
   }
   
   async deleteGrafanaOrganization(id: number): Promise<boolean> {
-    await db.delete(grafanaOrganizations).where(eq(grafanaOrganizations.id, id));
+    await prisma.grafanaOrganization.delete({
+      where: { id }
+    });
     return true;
   }
   
   // Grafana team operations
   async getGrafanaTeam(id: number): Promise<GrafanaTeam | undefined> {
-    const [team] = await db.select().from(grafanaTeams).where(eq(grafanaTeams.id, id));
-    return team;
+    return await prisma.grafanaTeam.findUnique({
+      where: { id }
+    }) || undefined;
   }
   
   async getGrafanaTeams(orgId?: number): Promise<GrafanaTeam[]> {
-    let query = db.select().from(grafanaTeams);
+    const where = orgId !== undefined ? { orgId } : {};
     
-    if (orgId !== undefined) {
-      query = query.where(eq(grafanaTeams.orgId, orgId));
-    }
-    
-    return await query.orderBy(grafanaTeams.name);
+    return await prisma.grafanaTeam.findMany({
+      where,
+      orderBy: { name: 'asc' }
+    });
   }
   
   async createGrafanaTeam(team: InsertGrafanaTeam): Promise<GrafanaTeam> {
-    const [newTeam] = await db.insert(grafanaTeams).values(team).returning();
-    return newTeam;
+    return await prisma.grafanaTeam.create({
+      data: team
+    });
   }
   
   async updateGrafanaTeam(id: number, teamData: Partial<GrafanaTeam>): Promise<GrafanaTeam | undefined> {
-    const now = new Date();
-    const [updatedTeam] = await db
-      .update(grafanaTeams)
-      .set({ ...teamData, updatedAt: now })
-      .where(eq(grafanaTeams.id, id))
-      .returning();
-    return updatedTeam;
+    return await prisma.grafanaTeam.update({
+      where: { id },
+      data: {
+        ...teamData,
+        updatedAt: new Date()
+      }
+    });
   }
   
   async deleteGrafanaTeam(id: number): Promise<boolean> {
-    await db.delete(grafanaTeams).where(eq(grafanaTeams.id, id));
+    await prisma.grafanaTeam.delete({
+      where: { id }
+    });
     return true;
   }
   
   // User organization membership operations
   async getUserOrgMemberships(userId: number): Promise<UserOrgMembership[]> {
-    return await db
-      .select()
-      .from(userOrganizationMemberships)
-      .where(eq(userOrganizationMemberships.userId, userId));
+    return await prisma.userOrgMembership.findMany({
+      where: { userId }
+    });
   }
   
   async createUserOrgMembership(membership: InsertUserOrgMembership): Promise<UserOrgMembership> {
-    const [newMembership] = await db.insert(userOrganizationMemberships).values(membership).returning();
-    return newMembership;
+    return await prisma.userOrgMembership.create({
+      data: membership
+    });
   }
   
   async deleteUserOrgMembership(userId: number, orgId: number): Promise<boolean> {
-    await db
-      .delete(userOrganizationMemberships)
-      .where(
-        and(
-          eq(userOrganizationMemberships.userId, userId),
-          eq(userOrganizationMemberships.orgId, orgId)
-        )
-      );
+    await prisma.userOrgMembership.deleteMany({
+      where: {
+        userId,
+        orgId
+      }
+    });
     return true;
   }
   
   // User team membership operations
   async getUserTeamMemberships(userId: number): Promise<UserTeamMembership[]> {
-    return await db
-      .select()
-      .from(userTeamMemberships)
-      .where(eq(userTeamMemberships.userId, userId));
+    return await prisma.userTeamMembership.findMany({
+      where: { userId }
+    });
   }
   
   async createUserTeamMembership(membership: InsertUserTeamMembership): Promise<UserTeamMembership> {
-    const [newMembership] = await db.insert(userTeamMemberships).values(membership).returning();
-    return newMembership;
+    return await prisma.userTeamMembership.create({
+      data: membership
+    });
   }
   
   async deleteUserTeamMembership(userId: number, teamId: number): Promise<boolean> {
-    await db
-      .delete(userTeamMemberships)
-      .where(
-        and(
-          eq(userTeamMemberships.userId, userId),
-          eq(userTeamMemberships.teamId, teamId)
-        )
-      );
+    await prisma.userTeamMembership.deleteMany({
+      where: {
+        userId,
+        teamId
+      }
+    });
     return true;
   }
   
   // Sync log operations
   async getSyncLogs(limit: number = 50): Promise<SyncLog[]> {
-    return await db
-      .select()
-      .from(syncLogs)
-      .orderBy(desc(syncLogs.createdAt))
-      .limit(limit);
+    return await prisma.syncLog.findMany({
+      orderBy: { createdAt: 'desc' },
+      take: limit
+    });
   }
   
   async createSyncLog(log: InsertSyncLog): Promise<SyncLog> {
-    const [newLog] = await db.insert(syncLogs).values(log).returning();
-    return newLog;
+    // Prismaの型との整合性をとるため、nullの場合は処理
+    const details = log.details !== null ? log.details : undefined;
+    
+    return await prisma.syncLog.create({
+      data: {
+        ...log,
+        details
+      }
+    });
   }
   
   // Settings operations
   async getSetting(key: string): Promise<Setting | undefined> {
-    const [setting] = await db.select().from(settings).where(eq(settings.key, key));
-    return setting;
+    return await prisma.setting.findUnique({
+      where: { key }
+    }) || undefined;
   }
   
   async updateSetting(key: string, value: string): Promise<Setting> {
-    const now = new Date();
-    
-    // Try to update existing setting
-    const [existingSetting] = await db
-      .update(settings)
-      .set({ value, updatedAt: now })
-      .where(eq(settings.key, key))
-      .returning();
-    
-    if (existingSetting) {
-      return existingSetting;
+    try {
+      // Try to update existing setting
+      return await prisma.setting.update({
+        where: { key },
+        data: {
+          value,
+          updatedAt: new Date()
+        }
+      });
+    } catch (error) {
+      // If setting doesn't exist, create it
+      return await prisma.setting.create({
+        data: {
+          key,
+          value
+        }
+      });
     }
-    
-    // If setting doesn't exist, create it
-    const [newSetting] = await db
-      .insert(settings)
-      .values({ key, value })
-      .returning();
-    
-    return newSetting;
   }
 }
 

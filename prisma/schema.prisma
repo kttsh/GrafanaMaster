@@ -1,0 +1,120 @@
+// This is your Prisma schema file,
+// learn more about it in the docs: https://pris.ly/d/prisma-schema
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+// Authentication
+model User {
+  id        Int      @id @default(autoincrement())
+  username  String   @unique
+  password  String
+  email     String?
+  firstName String?  @map("first_name")
+  lastName  String?  @map("last_name")
+  isAdmin   Boolean  @default(false) @map("is_admin")
+  createdAt DateTime @default(now()) @map("created_at")
+
+  @@map("users")
+}
+
+// Grafana entities
+model GrafanaUser {
+  id            Int       @id @default(autoincrement())
+  userId        String    @unique @map("user_id") // Opoppo USER_ID or Grafana user ID
+  name          String?
+  email         String?
+  login         String?   // Login username in Grafana
+  company       String?
+  department    String?
+  position      String?
+  grafanaId     Int?      @map("grafana_id") // ID from Grafana API
+  lastLogin     DateTime? @map("last_login")
+  status        String    @default("pending") // active, pending, disabled
+  createdAt     DateTime  @default(now()) @map("created_at")
+  updatedAt     DateTime  @default(now()) @map("updated_at")
+  
+  orgMemberships UserOrgMembership[]
+  teamMemberships UserTeamMembership[]
+
+  @@map("grafana_users")
+}
+
+model GrafanaOrganization {
+  id        Int      @id @default(autoincrement())
+  name      String
+  grafanaId Int?     @map("grafana_id") // ID from Grafana API
+  createdAt DateTime @default(now()) @map("created_at")
+  updatedAt DateTime @default(now()) @map("updated_at")
+  
+  teams GrafanaTeam[]
+  userMemberships UserOrgMembership[]
+
+  @@map("grafana_organizations")
+}
+
+model GrafanaTeam {
+  id        Int      @id @default(autoincrement())
+  name      String
+  orgId     Int      @map("org_id")
+  grafanaId Int?     @map("grafana_id") // ID from Grafana API
+  email     String?
+  createdAt DateTime @default(now()) @map("created_at")
+  updatedAt DateTime @default(now()) @map("updated_at")
+  
+  organization GrafanaOrganization @relation(fields: [orgId], references: [id])
+  userMemberships UserTeamMembership[]
+
+  @@map("grafana_teams")
+}
+
+model UserOrgMembership {
+  id        Int      @id @default(autoincrement())
+  userId    Int      @map("user_id")
+  orgId     Int      @map("org_id")
+  role      String   @default("Viewer") // Admin, Editor, Viewer
+  isDefault Boolean  @default(false) @map("is_default")
+  createdAt DateTime @default(now()) @map("created_at")
+  
+  user GrafanaUser @relation(fields: [userId], references: [id])
+  organization GrafanaOrganization @relation(fields: [orgId], references: [id])
+
+  @@map("user_organization_memberships")
+}
+
+model UserTeamMembership {
+  id        Int      @id @default(autoincrement())
+  userId    Int      @map("user_id")
+  teamId    Int      @map("team_id")
+  createdAt DateTime @default(now()) @map("created_at")
+  
+  user GrafanaUser @relation(fields: [userId], references: [id])
+  team GrafanaTeam @relation(fields: [teamId], references: [id])
+
+  @@map("user_team_memberships")
+}
+
+model SyncLog {
+  id        Int      @id @default(autoincrement())
+  type      String   // opoppo_to_db, db_to_grafana
+  status    String   // success, error
+  details   Json?
+  createdAt DateTime @default(now()) @map("created_at")
+
+  @@map("sync_logs")
+}
+
+model Setting {
+  id        Int      @id @default(autoincrement())
+  key       String   @unique
+  value     String?
+  updatedAt DateTime @default(now()) @map("updated_at")
+
+  @@map("settings")
+}

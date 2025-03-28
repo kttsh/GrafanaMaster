@@ -2,7 +2,7 @@ import type { Express, Request, Response, NextFunction } from "express";
 import { createServer, type Server } from "http";
 import { storage } from "./storage";
 import { z } from "zod";
-import { insertGrafanaUserSchema, insertGrafanaOrgSchema, insertGrafanaTeamSchema } from "../shared/schema";
+import { type InsertGrafanaUser, type InsertGrafanaOrg, type InsertGrafanaTeam } from "../shared/types";
 import * as grafanaApi from "./grafana";
 import * as opoppoApi from "./opoppo";
 
@@ -77,9 +77,22 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  // Zod Schema for validation
+  const grafanaUserSchema = z.object({
+    userId: z.string(),
+    name: z.string().optional(),
+    email: z.string().optional(),
+    login: z.string().optional(),
+    company: z.string().optional(),
+    department: z.string().optional(),
+    position: z.string().optional(),
+    grafanaId: z.number().optional(),
+    status: z.string().default("pending")
+  });
+
   app.post("/api/grafana/users", async (req, res, next) => {
     try {
-      const userData = insertGrafanaUserSchema.parse(req.body);
+      const userData = grafanaUserSchema.parse(req.body) as InsertGrafanaUser;
       const user = await storage.createGrafanaUser(userData);
       res.status(201).json(user);
     } catch (error) {
@@ -90,7 +103,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   app.put("/api/grafana/users/:id", async (req, res, next) => {
     try {
       const id = parseInt(req.params.id);
-      const userData = insertGrafanaUserSchema.partial().parse(req.body);
+      const userData = grafanaUserSchema.partial().parse(req.body);
       
       const user = await storage.updateGrafanaUser(id, userData);
       
@@ -139,9 +152,16 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  // Zod Schema for Organization validation
+  const grafanaOrgSchema = z.object({
+    name: z.string(),
+    grafanaId: z.number().optional(),
+    status: z.string().default("active")
+  });
+
   app.post("/api/grafana/organizations", async (req, res, next) => {
     try {
-      const orgData = insertGrafanaOrgSchema.parse(req.body);
+      const orgData = grafanaOrgSchema.parse(req.body) as InsertGrafanaOrg;
       const org = await storage.createGrafanaOrganization(orgData);
       res.status(201).json(org);
     } catch (error) {
@@ -152,7 +172,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   app.put("/api/grafana/organizations/:id", async (req, res, next) => {
     try {
       const id = parseInt(req.params.id);
-      const orgData = insertGrafanaOrgSchema.partial().parse(req.body);
+      const orgData = grafanaOrgSchema.partial().parse(req.body);
       
       const org = await storage.updateGrafanaOrganization(id, orgData);
       
@@ -202,9 +222,17 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  // Zod Schema for Team validation
+  const grafanaTeamSchema = z.object({
+    name: z.string(),
+    orgId: z.number(),
+    email: z.string().optional(),
+    grafanaId: z.number().optional()
+  });
+
   app.post("/api/grafana/teams", async (req, res, next) => {
     try {
-      const teamData = insertGrafanaTeamSchema.parse(req.body);
+      const teamData = grafanaTeamSchema.parse(req.body) as InsertGrafanaTeam;
       const team = await storage.createGrafanaTeam(teamData);
       res.status(201).json(team);
     } catch (error) {
@@ -215,7 +243,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   app.put("/api/grafana/teams/:id", async (req, res, next) => {
     try {
       const id = parseInt(req.params.id);
-      const teamData = insertGrafanaTeamSchema.partial().parse(req.body);
+      const teamData = grafanaTeamSchema.partial().parse(req.body);
       
       const team = await storage.updateGrafanaTeam(id, teamData);
       

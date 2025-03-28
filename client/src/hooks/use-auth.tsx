@@ -1,16 +1,11 @@
-import { User as SelectUser } from "@shared/schema";
-
 // デフォルトの管理者ユーザーを返す簡易版のフック
 export function useAuth() {
   // 常に認証済みの管理者ユーザーを返す
-  const mockUser: SelectUser = {
+  const mockUser = {
     id: 1,
     username: 'admin',
     email: 'admin@example.com',
-    password: '',
     role: 'admin',
-    createdAt: new Date(),
-    updatedAt: new Date()
   };
   
   return {
