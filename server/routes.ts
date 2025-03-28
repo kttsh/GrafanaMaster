@@ -329,12 +329,11 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
-  // Synchronization API
-  app.get("/api/sync/logs", async (req, res, next) => {
+  // Simplified Sync API
+  app.post("/api/sync", async (req, res, next) => {
     try {
-      const limit = req.query.limit ? parseInt(req.query.limit.toString()) : undefined;
-      const logs = await storage.getSyncLogs(limit);
-      res.json(logs);
+      const result = await grafanaApi.runFullSync();
+      res.json({ status: "success", ...result });
     } catch (error) {
       next(error);
     }
