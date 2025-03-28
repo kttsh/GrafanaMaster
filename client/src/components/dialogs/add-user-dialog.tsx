@@ -54,9 +54,10 @@ type AddUserFormValues = z.infer<typeof addUserSchema>;
 export default function AddUserDialog({ isOpen, onClose }: AddUserDialogProps) {
   const { toast } = useToast();
   const [step, setStep] = useState(1);
+  const [isLoadingOPoppoUser, setIsLoadingOPoppoUser] = useState(false);
   
   // Fetch organizations for the org selection
-  const { data: organizations, isLoading: isLoadingOrgs } = useQuery({
+  const { data: organizations = [], isLoading: isLoadingOrgs } = useQuery<Array<{ id: number, name: string }>>({
     queryKey: ["/api/grafana/organizations"],
     enabled: isOpen, // Only fetch when dialog is open
   });
@@ -129,6 +130,50 @@ export default function AddUserDialog({ isOpen, onClose }: AddUserDialogProps) {
       organizations: [],
     },
   });
+
+  // Fetch Opoppo user data when user ID is entered
+  const fetchOPoppoUserData = async (userId: string) => {
+    if (!userId.trim()) return;
+    
+    setIsLoadingOPoppoUser(true);
+    try {
+      const response = await fetch(`/api/opoppo/users/${userId}`);
+      if (!response.ok) {
+        if (response.status === 404) {
+          toast({
+            title: "User not found",
+            description: "No user with this ID was found in Opoppo system.",
+            variant: "destructive",
+          });
+        } else {
+          throw new Error("Failed to fetch user data");
+        }
+      } else {
+        const userData = await response.json();
+        
+        // Fill form fields with the fetched data
+        form.setValue("name", `${userData.SEI} ${userData.MEI}`, { shouldValidate: true });
+        form.setValue("email", `${userData.USER_ID}@example.com`, { shouldValidate: true });
+        form.setValue("login", userData.USER_ID, { shouldValidate: true });
+        form.setValue("company", userData.KAISYA_NM || "", { shouldValidate: true });
+        form.setValue("department", userData.SOSHIKI_NM || "", { shouldValidate: true });
+        form.setValue("position", userData.YAKUSYOKU_NM || "", { shouldValidate: true });
+        
+        toast({
+          title: "User data loaded",
+          description: "Opoppo user data has been loaded successfully.",
+        });
+      }
+    } catch (error) {
+      toast({
+        title: "Error",
+        description: "Failed to fetch user data from Opoppo.",
+        variant: "destructive",
+      });
+    } finally {
+      setIsLoadingOPoppoUser(false);
+    }
+  };
 
   // Handle form submission
   const onSubmit = (values: AddUserFormValues) => {
@@ -218,13 +263,25 @@ export default function AddUserDialog({ isOpen, onClose }: AddUserDialogProps) {
                     render={({ field }) => (
                       <FormItem>
                         <FormLabel>User ID</FormLabel>
-                        <FormControl>
-                          <Input
-                            {...field}
-                            placeholder="Enter user ID"
-                            className="bg-grafana-dark border-grafana-dark-200 text-grafana-text"
-                          />
-                        </FormControl>
+                        <div className="flex space-x-2">
+                          <FormControl className="flex-1">
+                            <Input
+                              {...field}
+                              placeholder="Enter user ID"
+                              className="bg-grafana-dark border-grafana-dark-200 text-grafana-text"
+                            />
+                          </FormControl>
+                          <Button 
+                            type="button" 
+                            variant="secondary" 
+                            className="bg-grafana-orange hover:bg-grafana-orange/90 text-white"
+                            onClick={() => fetchOPoppoUserData(field.value)}
+                            disabled={isLoadingOPoppoUser || !field.value}
+                          >
+                            {isLoadingOPoppoUser ? <Loader2 className="h-4 w-4 animate-spin mr-1" /> : null}
+                            Load
+                          </Button>
+                        </div>
                         <FormMessage className="text-grafana-error" />
                       </FormItem>
                     )}
@@ -371,7 +428,7 @@ export default function AddUserDialog({ isOpen, onClose }: AddUserDialogProps) {
                     <Loader2 className="h-6 w-6 animate-spin text-grafana-orange" />
                     <span className="ml-2">Loading organizations...</span>
                   </div>
-                ) : organizations?.length > 0 ? (
+                ) : organizations && organizations.length > 0 ? (
                   <div className="space-y-4 mt-2 max-h-64 overflow-y-auto pr-2 grafana-scrollbar">
                     {organizations.map((org) => (
                       <div key={org.id} className="border border-grafana-dark-200 rounded-md p-3">

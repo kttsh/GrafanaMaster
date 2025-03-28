@@ -465,6 +465,55 @@ export async function registerRoutes(app: Express): Promise<Server> {
       next(error);
     }
   });
+  
+  // ユーザーIDで指定したOPoppoユーザー情報を取得する
+  app.get("/api/opoppo/users/:userId", async (req, res, next) => {
+    try {
+      const userId = req.params.userId;
+      const user = await opoppoApi.getOPoppoUserById(userId);
+      
+      if (!user) {
+        return res.status(404).json({ message: "User not found in Opoppo" });
+      }
+      
+      res.json(user);
+    } catch (error) {
+      next(error);
+    }
+  });
+  
+  // ユーザー一覧を取得する際にOPoppoの情報も含める
+  app.get("/api/combined-users", async (req, res, next) => {
+    try {
+      const limit = parseInt(req.query.limit?.toString() || "10");
+      const offset = parseInt(req.query.offset?.toString() || "0");
+      const search = req.query.search?.toString();
+      
+      // Grafanaからユーザーを取得
+      const { users, total } = await (async () => {
+        const users = await storage.getGrafanaUsers(limit, offset, search);
+        const total = await storage.countGrafanaUsers(search);
+        return { users, total };
+      })();
+      
+      // Opoppoのユーザー情報を取得
+      const opoppoUsers = await opoppoApi.getOPoppoUsers();
+      
+      // Grafanaユーザーとオポッポユーザーを紐付け
+      const combinedUsers = users.map(user => {
+        const opoppoUser = opoppoUsers.find(ou => ou.USER_ID === user.userId);
+        return {
+          ...user,
+          opoppoData: opoppoUser || null,
+          hasOpoppoData: !!opoppoUser
+        };
+      });
+      
+      res.json({ users: combinedUsers, total });
+    } catch (error) {
+      next(error);
+    }
+  });
 
   app.get("/api/opoppo/companies", async (req, res, next) => {
     try {
