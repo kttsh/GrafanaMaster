@@ -59,16 +59,15 @@ export default function Sidebar({ onSyncClick, isSyncing = false }: SidebarProps
         <ul className="space-y-2 flex-1">
           {navItems.map((item) => (
             <li key={item.href}>
-              <Link href={item.href}>
-                <a
-                  className={cn(
-                    "flex items-center px-3 py-2 rounded text-grafana-text hover:bg-grafana-dark-100 transition-colors",
-                    location === item.href && "text-white bg-grafana-orange hover:bg-grafana-orange/90"
-                  )}
-                >
-                  <span className="text-xl md:mr-2">{item.icon}</span>
-                  <span className="hidden md:inline-block">{item.title}</span>
-                </a>
+              <Link 
+                href={item.href}
+                className={cn(
+                  "flex items-center px-3 py-2 rounded text-grafana-text hover:bg-grafana-dark-100 transition-colors",
+                  location === item.href && "text-white bg-grafana-orange hover:bg-grafana-orange/90"
+                )}
+              >
+                <span className="text-xl md:mr-2">{item.icon}</span>
+                <span className="hidden md:inline-block">{item.title}</span>
               </Link>
             </li>
           ))}
