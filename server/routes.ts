@@ -430,6 +430,31 @@ export async function registerRoutes(app: Express): Promise<Server> {
       next(error);
     }
   });
+  
+  // Grafanaからユーザーのみを同期するエンドポイント
+  app.post("/api/sync/grafana-users", async (req, res, next) => {
+    try {
+      const count = await grafanaApi.syncGrafanaUsers();
+      
+      // ログの保存
+      await storage.createSyncLog({
+        type: "grafana_users_sync",
+        status: "success",
+        details: { count }
+      });
+      
+      res.json({ count, status: "success" });
+    } catch (error) {
+      // エラーログの保存
+      const err = error as Error;
+      await storage.createSyncLog({
+        type: "grafana_users_sync",
+        status: "error",
+        details: { error: err.message }
+      });
+      next(error);
+    }
+  });
 
   // Opoppo API
   app.get("/api/opoppo/users", async (req, res, next) => {

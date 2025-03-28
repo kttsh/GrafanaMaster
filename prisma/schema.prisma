@@ -24,97 +24,103 @@ model User {
   @@map("users")
 }
 
-// Grafana entities
+// Grafana Users
 model GrafanaUser {
-  id            Int       @id @default(autoincrement())
-  userId        String    @unique @map("user_id") // Opoppo USER_ID or Grafana user ID
-  name          String?
-  email         String?
-  login         String?   // Login username in Grafana
-  company       String?
-  department    String?
-  position      String?
-  grafanaId     Int?      @map("grafana_id") // ID from Grafana API
-  lastLogin     DateTime? @map("last_login")
-  status        String    @default("pending") // active, pending, disabled
-  createdAt     DateTime  @default(now()) @map("created_at")
-  updatedAt     DateTime  @default(now()) @map("updated_at")
+  id            Int      @id @default(autoincrement())
+  userId        String   @unique @map("user_id")
+  name          String
+  email         String
+  login         String
+  isDisabled    Boolean  @default(false) @map("is_disabled")
+  isExternal    Boolean  @default(false) @map("is_external")
+  authLabels    String[] @map("auth_labels")
+  lastSeenAt    DateTime? @map("last_seen_at")
+  lastSeenAtAge String?  @map("last_seen_at_age")
+  createdAt     DateTime @default(now()) @map("created_at")
+  updatedAt     DateTime @default(now()) @updatedAt @map("updated_at")
   
-  orgMemberships UserOrgMembership[]
+  orgMemberships  UserOrgMembership[]
   teamMemberships UserTeamMembership[]
 
   @@map("grafana_users")
 }
 
+// Grafana Organizations
 model GrafanaOrganization {
   id        Int      @id @default(autoincrement())
   name      String
-  grafanaId Int?     @map("grafana_id") // ID from Grafana API
+  address   Json?
   createdAt DateTime @default(now()) @map("created_at")
-  updatedAt DateTime @default(now()) @map("updated_at")
+  updatedAt DateTime @default(now()) @updatedAt @map("updated_at")
   
-  teams GrafanaTeam[]
   userMemberships UserOrgMembership[]
+  teams           GrafanaTeam[]
 
   @@map("grafana_organizations")
 }
 
+// Grafana Teams
 model GrafanaTeam {
-  id        Int      @id @default(autoincrement())
-  name      String
-  orgId     Int      @map("org_id")
-  grafanaId Int?     @map("grafana_id") // ID from Grafana API
-  email     String?
-  createdAt DateTime @default(now()) @map("created_at")
-  updatedAt DateTime @default(now()) @map("updated_at")
+  id          Int      @id @default(autoincrement())
+  name        String
+  email       String?
+  orgId       Int      @map("org_id")
+  memberCount Int      @default(0) @map("member_count")
+  createdAt   DateTime @default(now()) @map("created_at")
+  updatedAt   DateTime @default(now()) @updatedAt @map("updated_at")
   
-  organization GrafanaOrganization @relation(fields: [orgId], references: [id])
-  userMemberships UserTeamMembership[]
+  organization     GrafanaOrganization  @relation(fields: [orgId], references: [id], onDelete: Cascade)
+  userMemberships  UserTeamMembership[]
 
   @@map("grafana_teams")
 }
 
+// User Organization Memberships
 model UserOrgMembership {
   id        Int      @id @default(autoincrement())
   userId    Int      @map("user_id")
   orgId     Int      @map("org_id")
-  role      String   @default("Viewer") // Admin, Editor, Viewer
-  isDefault Boolean  @default(false) @map("is_default")
+  role      String   @default("Viewer")
   createdAt DateTime @default(now()) @map("created_at")
   
-  user GrafanaUser @relation(fields: [userId], references: [id])
-  organization GrafanaOrganization @relation(fields: [orgId], references: [id])
+  user  GrafanaUser          @relation(fields: [userId], references: [id], onDelete: Cascade)
+  org   GrafanaOrganization  @relation(fields: [orgId], references: [id], onDelete: Cascade)
 
+  @@unique([userId, orgId])
   @@map("user_organization_memberships")
 }
 
+// User Team Memberships
 model UserTeamMembership {
   id        Int      @id @default(autoincrement())
   userId    Int      @map("user_id")
   teamId    Int      @map("team_id")
   createdAt DateTime @default(now()) @map("created_at")
   
-  user GrafanaUser @relation(fields: [userId], references: [id])
-  team GrafanaTeam @relation(fields: [teamId], references: [id])
+  user  GrafanaUser  @relation(fields: [userId], references: [id], onDelete: Cascade)
+  team  GrafanaTeam  @relation(fields: [teamId], references: [id], onDelete: Cascade)
 
+  @@unique([userId, teamId])
   @@map("user_team_memberships")
 }
 
+// Sync Logs
 model SyncLog {
   id        Int      @id @default(autoincrement())
-  type      String   // opoppo_to_db, db_to_grafana
-  status    String   // success, error
+  type      String
+  status    String
   details   Json?
   createdAt DateTime @default(now()) @map("created_at")
 
   @@map("sync_logs")
 }
 
+// Settings
 model Setting {
   id        Int      @id @default(autoincrement())
   key       String   @unique
-  value     String?
-  updatedAt DateTime @default(now()) @map("updated_at")
+  value     String
+  updatedAt DateTime @default(now()) @updatedAt @map("updated_at")
 
   @@map("settings")
 }

@@ -10,6 +10,7 @@ import {
   Clock, 
   Building,
   UserPlus,
+  RefreshCw,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -36,8 +37,46 @@ export default function UsersPage() {
   const [search, setSearch] = useState("");
 
   // Fetch statistics
-  const { data: stats, isLoading: isLoadingStats } = useQuery({
+  interface StatsData {
+    totalUsers: number;
+    activeUsers: number;
+    pendingUsers: number;
+    organizations: number;
+    teams: number;
+    lastSync: {
+      time: string;
+      type: string;
+      status: string;
+    } | null;
+  }
+  
+  const { data: stats, isLoading: isLoadingStats } = useQuery<StatsData, Error>({
     queryKey: ["/api/stats"],
+  });
+
+  // Sync users from Grafana mutation
+  const syncGrafanaUsersMutation = useMutation({
+    mutationFn: async () => {
+      const response = await apiRequest("POST", "/api/sync/grafana-users");
+      return await response.json();
+    },
+    onSuccess: (data: { count: number, status: string }) => {
+      toast({
+        title: "同期完了",
+        description: `Grafanaからのユーザー同期が完了しました。${data.count || 0}ユーザーを同期しました。`,
+      });
+      // Invalidate queries to refresh the data
+      queryClient.invalidateQueries({ queryKey: ["/api/grafana/users"] });
+      queryClient.invalidateQueries({ queryKey: ["/api/stats"] });
+      queryClient.invalidateQueries({ queryKey: ["/api/sync/logs"] });
+    },
+    onError: (error: Error) => {
+      toast({
+        title: "同期エラー",
+        description: `Grafanaからのユーザー同期に失敗しました: ${error.message}`,
+        variant: "destructive",
+      });
+    },
   });
 
   // Handle user deletion
@@ -104,13 +143,24 @@ export default function UsersPage() {
           </div>
         </div>
         
-        <Button 
-          onClick={() => setIsAddUserOpen(true)}
-          className="flex items-center justify-center px-4 py-2 bg-grafana-orange hover:bg-grafana-orange/90 text-white rounded-md transition-colors"
-        >
-          <UserPlus className="mr-2 h-4 w-4" />
-          <span>Add User</span>
-        </Button>
+        <div className="flex space-x-2">
+          <Button 
+            onClick={() => syncGrafanaUsersMutation.mutate()}
+            disabled={syncGrafanaUsersMutation.isPending}
+            className="flex items-center justify-center px-4 py-2 bg-grafana-blue hover:bg-grafana-blue/90 text-white rounded-md transition-colors"
+          >
+            <RefreshCw className={`mr-2 h-4 w-4 ${syncGrafanaUsersMutation.isPending ? "animate-spin" : ""}`} />
+            <span>Grafanaからユーザーを同期</span>
+          </Button>
+          
+          <Button 
+            onClick={() => setIsAddUserOpen(true)}
+            className="flex items-center justify-center px-4 py-2 bg-grafana-orange hover:bg-grafana-orange/90 text-white rounded-md transition-colors"
+          >
+            <UserPlus className="mr-2 h-4 w-4" />
+            <span>Add User</span>
+          </Button>
+        </div>
       </div>
 
       {/* Status Cards */}
@@ -125,7 +175,7 @@ export default function UsersPage() {
         <StatusCard
           title="Active Users"
           value={isLoadingStats ? "-" : stats?.activeUsers || 0}
-          subtitle={isLoadingStats ? "" : `${Math.round((stats?.activeUsers / stats?.totalUsers || 0) * 100)}% of total users`}
+          subtitle={isLoadingStats ? "" : `${Math.round(((stats?.activeUsers ?? 0) / (stats?.totalUsers ?? 1)) * 100)}% of total users`}
           icon={<UserCheck />}
           color="green"
         />
