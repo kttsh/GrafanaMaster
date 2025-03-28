@@ -3,8 +3,9 @@ import { useQuery, useMutation } from "@tanstack/react-query";
 import MainLayout from "@/components/layout/main-layout";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { Building, Plus, Pencil, Trash2, Users } from "lucide-react";
+import { Building, Plus, Pencil, Trash2, Users, RefreshCw } from "lucide-react";
 import { apiRequest, queryClient } from "@/lib/queryClient";
+import { cn } from "@/lib/utils";
 import { useToast } from "@/hooks/use-toast";
 import {
   Dialog,
@@ -51,10 +52,39 @@ export default function OrganizationsPage() {
   const [isAddOrgOpen, setIsAddOrgOpen] = useState(false);
   const [editingOrg, setEditingOrg] = useState<{ id: number; name: string; grafanaId?: number } | null>(null);
   const [deleteOrgId, setDeleteOrgId] = useState<number | null>(null);
+  const [isSyncing, setIsSyncing] = useState(false);
 
   // Fetch organizations
-  const { data: organizations, isLoading } = useQuery({
+  const { data: organizations, isLoading } = useQuery<any[]>({
     queryKey: ["/api/grafana/organizations"],
+  });
+  
+  // 組織同期のmutation
+  const syncOrgsMutation = useMutation({
+    mutationFn: async () => {
+      setIsSyncing(true);
+      const res = await apiRequest("POST", "/api/sync/organizations");
+      return res.json();
+    },
+    onSuccess: (data) => {
+      toast({
+        title: "組織の同期が完了しました",
+        description: `${data.count}件の組織を同期しました。`,
+      });
+      queryClient.invalidateQueries({ queryKey: ["/api/grafana/organizations"] });
+      queryClient.invalidateQueries({ queryKey: ["/api/sync/logs"] });
+      queryClient.invalidateQueries({ queryKey: ["/api/stats"] });
+    },
+    onError: (error: Error) => {
+      toast({
+        title: "同期に失敗しました",
+        description: error.message,
+        variant: "destructive",
+      });
+    },
+    onSettled: () => {
+      setIsSyncing(false);
+    },
   });
 
   // Add organization mutation
@@ -163,7 +193,15 @@ export default function OrganizationsPage() {
       title="Organizations"
       subtitle="Manage Grafana organizations and their members"
     >
-      <div className="flex justify-end mb-6">
+      <div className="flex justify-between items-center mb-6">
+        <Button
+          onClick={() => syncOrgsMutation.mutate()}
+          disabled={isSyncing}
+          className="flex items-center bg-grafana-teal hover:bg-grafana-teal/90 text-grafana-dark font-medium"
+        >
+          <RefreshCw className={cn("mr-2 h-4 w-4", isSyncing && "animate-spin")} />
+          <span>{isSyncing ? "同期中..." : "Grafanaから組織を同期"}</span>
+        </Button>
         <Button
           onClick={() => setIsAddOrgOpen(true)}
           className="flex items-center bg-grafana-orange hover:bg-grafana-orange/90 text-white"

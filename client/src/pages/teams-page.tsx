@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useQuery, useMutation } from "@tanstack/react-query";
 import MainLayout from "@/components/layout/main-layout";
 import { Button } from "@/components/ui/button";
@@ -13,7 +13,8 @@ import {
   Search, 
   Users,
   Pencil,
-  Trash2
+  Trash2,
+  RefreshCw
 } from "lucide-react";
 import { apiRequest, queryClient } from "@/lib/queryClient";
 import { useToast } from "@/hooks/use-toast";
@@ -69,15 +70,44 @@ export default function TeamsPage() {
   const [isAddTeamOpen, setIsAddTeamOpen] = useState(false);
   const [editingTeam, setEditingTeam] = useState<any | null>(null);
   const [deleteTeamId, setDeleteTeamId] = useState<number | null>(null);
+  const [isSyncing, setIsSyncing] = useState(false);
 
   // Fetch teams
-  const { data: teams, isLoading } = useQuery({
+  const { data: teams, isLoading } = useQuery<any[]>({
     queryKey: ["/api/grafana/teams"],
   });
 
   // Fetch organizations for the dropdown
-  const { data: organizations } = useQuery({
+  const { data: organizations } = useQuery<any[]>({
     queryKey: ["/api/grafana/organizations"],
+  });
+  
+  // チーム同期のmutation
+  const syncTeamsMutation = useMutation({
+    mutationFn: async () => {
+      setIsSyncing(true);
+      const res = await apiRequest("POST", "/api/sync/teams");
+      return res.json();
+    },
+    onSuccess: (data) => {
+      toast({
+        title: "チームの同期が完了しました",
+        description: `${data.count}件のチームを同期しました。`,
+      });
+      queryClient.invalidateQueries({ queryKey: ["/api/grafana/teams"] });
+      queryClient.invalidateQueries({ queryKey: ["/api/sync/logs"] });
+      queryClient.invalidateQueries({ queryKey: ["/api/stats"] });
+    },
+    onError: (error: Error) => {
+      toast({
+        title: "同期に失敗しました",
+        description: error.message,
+        variant: "destructive",
+      });
+    },
+    onSettled: () => {
+      setIsSyncing(false);
+    },
   });
 
   // Add team mutation
@@ -167,7 +197,7 @@ export default function TeamsPage() {
   });
 
   // Reset form when editing team changes
-  useState(() => {
+  useEffect(() => {
     if (editingTeam) {
       form.reset({
         name: editingTeam.name,
@@ -181,7 +211,7 @@ export default function TeamsPage() {
         email: "",
       });
     }
-  });
+  }, [editingTeam, form]);
 
   // Handle form submission
   const onSubmit = (values: TeamFormValues) => {
@@ -204,15 +234,26 @@ export default function TeamsPage() {
       subtitle="Manage Grafana teams across organizations"
     >
       <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4 mb-6">
-        <div className="relative w-full md:w-auto">
-          <Input 
-            type="text" 
-            placeholder="Search teams..." 
-            value={search}
-            onChange={(e) => setSearch(e.target.value)}
-            className="pl-10 pr-3 py-2 bg-grafana-dark-100 border border-grafana-dark-200 rounded-md text-grafana-text placeholder-grafana-gray focus:outline-none focus:ring-1 focus:ring-grafana-orange w-full md:w-64"
-          />
-          <Search className="absolute left-3 top-2.5 h-5 w-5 text-grafana-gray" />
+        <div className="flex flex-col md:flex-row gap-4 items-start md:items-center w-full md:w-auto">
+          <div className="relative w-full md:w-64">
+            <Input 
+              type="text" 
+              placeholder="Search teams..." 
+              value={search}
+              onChange={(e) => setSearch(e.target.value)}
+              className="pl-10 pr-3 py-2 bg-grafana-dark-100 border border-grafana-dark-200 rounded-md text-grafana-text placeholder-grafana-gray focus:outline-none focus:ring-1 focus:ring-grafana-orange w-full"
+            />
+            <Search className="absolute left-3 top-2.5 h-5 w-5 text-grafana-gray" />
+          </div>
+          
+          <Button
+            onClick={() => syncTeamsMutation.mutate()}
+            disabled={isSyncing}
+            className="flex items-center bg-grafana-teal hover:bg-grafana-teal/90 text-grafana-dark font-medium w-full md:w-auto"
+          >
+            <RefreshCw className={`mr-2 h-4 w-4 ${isSyncing ? "animate-spin" : ""}`} />
+            <span>{isSyncing ? "同期中..." : "Grafanaからチームを同期"}</span>
+          </Button>
         </div>
         
         <Button
