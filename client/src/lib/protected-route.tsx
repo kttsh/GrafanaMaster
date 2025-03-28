@@ -1,7 +1,9 @@
-import { useAuth } from "@/hooks/use-auth";
-import { Loader2 } from "lucide-react";
-import { Redirect, Route } from "wouter";
+import { Route } from "wouter";
 
+/**
+ * 認証不要のシステムのためのシンプル化されたルートラッパー
+ * 常にコンポーネントを表示します
+ */
 export function ProtectedRoute({
   path,
   component: Component,
@@ -9,25 +11,5 @@ export function ProtectedRoute({
   path: string;
   component: () => React.JSX.Element;
 }) {
-  const { user, isLoading } = useAuth();
-
-  if (isLoading) {
-    return (
-      <Route path={path}>
-        <div className="flex items-center justify-center min-h-screen bg-grafana-black">
-          <Loader2 className="h-8 w-8 animate-spin text-grafana-orange" />
-        </div>
-      </Route>
-    );
-  }
-
-  if (!user) {
-    return (
-      <Route path={path}>
-        <Redirect to="/auth" />
-      </Route>
-    );
-  }
-
   return <Route path={path} component={Component} />;
 }
