@@ -14,7 +14,7 @@
   .dark input,
   .dark textarea,
   .dark select {
-    @apply bg-gray-800 text-white placeholder-gray-400;
+    @apply bg-white text-black placeholder-gray-500;
   }
 
   .dark [role="dialog"] {
