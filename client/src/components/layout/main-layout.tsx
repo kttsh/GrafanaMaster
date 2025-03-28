@@ -68,7 +68,7 @@ export default function MainLayout({
   };
 
   return (
-    <div className="h-screen flex flex-col bg-grafana-black">
+    <div className="h-screen flex flex-col bg-background">
       <Header 
         lastSyncTime={stats?.lastSync?.time}
         syncStatus={stats?.lastSync?.status === "success" ? "success" : stats?.lastSync ? "error" : "none"}
@@ -81,8 +81,8 @@ export default function MainLayout({
           isSyncing={isSyncing}
         />
         
-        <main className="flex-1 overflow-auto grafana-scrollbar">
-          <div className="p-4 md:p-6">
+        <main className="flex-1 overflow-auto grafana-scrollbar bg-background">
+          <div className="p-4 md:p-6 text-foreground">
             {(title || subtitle) && (
               <div className="flex flex-col md:flex-row md:items-center justify-between mb-6">
                 <div>
