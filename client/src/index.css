@@ -8,17 +8,26 @@
   }
 
   body {
-    @apply font-sans antialiased bg-background text-foreground;
+    @apply font-sans antialiased bg-grafana-dark text-grafana-text;
   }
+}
 
-  .dark input,
-  .dark textarea,
-  .dark select,
-  .dark [role="combobox"] {
-    @apply bg-white text-black placeholder-gray-500;
+@layer utilities {
+  .grafana-scrollbar::-webkit-scrollbar {
+    width: 6px;
+    height: 6px;
   }
-
-  .dark [role="dialog"] {
-    @apply bg-gray-900;
+  
+  .grafana-scrollbar::-webkit-scrollbar-track {
+    background-color: #181B1F;
+  }
+  
+  .grafana-scrollbar::-webkit-scrollbar-thumb {
+    background-color: #2c3235;
+    border-radius: 3px;
+  }
+  
+  .grafana-scrollbar::-webkit-scrollbar-thumb:hover {
+    background-color: rgba(244, 104, 0, 0.5);
   }
 }

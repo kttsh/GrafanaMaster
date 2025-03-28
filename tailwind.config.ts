@@ -1,7 +1,7 @@
 import type { Config } from "tailwindcss";
 
 export default {
-  darkMode: ["class"],
+  darkMode: "class",
   content: ["./client/index.html", "./client/src/**/*.{js,jsx,ts,tsx}"],
   theme: {
     extend: {
@@ -44,6 +44,16 @@ export default {
         border: "hsl(var(--border))",
         input: "hsl(var(--input))",
         ring: "hsl(var(--ring))",
+        // Grafana specific colors
+        "grafana-orange": "#F46800",
+        "grafana-dark": "#181B1F",
+        "grafana-dark-100": "#1f1f20",
+        "grafana-dark-200": "#2c3235",
+        "grafana-text": "#D8D9DA",
+        "grafana-gray": "#464646",
+        "grafana-blue": "#33B5E5",
+        "grafana-green": "#1DE9B6",
+        "grafana-error": "#E24D42",
         chart: {
           "1": "hsl(var(--chart-1))",
           "2": "hsl(var(--chart-2))",
