@@ -1,26 +1,29 @@
-import type { Express } from "express";
+import type { Express, Request, Response, NextFunction } from "express";
 import { createServer, type Server } from "http";
 import { storage } from "./storage";
-import { setupAuth } from "./auth";
 import { z } from "zod";
 import { insertGrafanaUserSchema, insertGrafanaOrgSchema, insertGrafanaTeamSchema } from "../shared/schema";
 import * as grafanaApi from "./grafana";
 import * as opoppoApi from "./opoppo";
 
-// Helper to ensure user is authenticated
-function requireAuth(req, res, next) {
-  if (!req.isAuthenticated()) {
-    return res.status(401).json({ message: "Unauthorized" });
-  }
-  next();
-}
+// 認証関連のimportを削除しました
+
+// ダミーユーザーAPIエンドポイント
+const mockUser = {
+  id: 1,
+  username: 'admin',
+  email: 'admin@example.com',
+  role: 'admin',
+};
 
 export async function registerRoutes(app: Express): Promise<Server> {
-  // Set up authentication routes
-  setupAuth(app);
+  // ダミーユーザー情報を返すエンドポイント
+  app.get("/api/user", (req, res) => {
+    res.json(mockUser);
+  });
 
   // Grafana Users API
-  app.get("/api/grafana/users", requireAuth, async (req, res, next) => {
+  app.get("/api/grafana/users", async (req, res, next) => {
     try {
       const limit = parseInt(req.query.limit?.toString() || "10");
       const offset = parseInt(req.query.offset?.toString() || "0");
@@ -35,7 +38,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
-  app.get("/api/grafana/users/:id", requireAuth, async (req, res, next) => {
+  app.get("/api/grafana/users/:id", async (req, res, next) => {
     try {
       const id = parseInt(req.params.id);
       const user = await storage.getGrafanaUser(id);
@@ -74,7 +77,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
-  app.post("/api/grafana/users", requireAuth, async (req, res, next) => {
+  app.post("/api/grafana/users", async (req, res, next) => {
     try {
       const userData = insertGrafanaUserSchema.parse(req.body);
       const user = await storage.createGrafanaUser(userData);
@@ -84,7 +87,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
-  app.put("/api/grafana/users/:id", requireAuth, async (req, res, next) => {
+  app.put("/api/grafana/users/:id", async (req, res, next) => {
     try {
       const id = parseInt(req.params.id);
       const userData = insertGrafanaUserSchema.partial().parse(req.body);
@@ -101,7 +104,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
-  app.delete("/api/grafana/users/:id", requireAuth, async (req, res, next) => {
+  app.delete("/api/grafana/users/:id", async (req, res, next) => {
     try {
       const id = parseInt(req.params.id);
       await storage.deleteGrafanaUser(id);
@@ -112,7 +115,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   });
 
   // Grafana Organizations API
-  app.get("/api/grafana/organizations", requireAuth, async (req, res, next) => {
+  app.get("/api/grafana/organizations", async (req, res, next) => {
     try {
       const orgs = await storage.getGrafanaOrganizations();
       res.json(orgs);
@@ -121,7 +124,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
-  app.get("/api/grafana/organizations/:id", requireAuth, async (req, res, next) => {
+  app.get("/api/grafana/organizations/:id", async (req, res, next) => {
     try {
       const id = parseInt(req.params.id);
       const org = await storage.getGrafanaOrganization(id);
@@ -136,7 +139,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
-  app.post("/api/grafana/organizations", requireAuth, async (req, res, next) => {
+  app.post("/api/grafana/organizations", async (req, res, next) => {
     try {
       const orgData = insertGrafanaOrgSchema.parse(req.body);
       const org = await storage.createGrafanaOrganization(orgData);
@@ -146,7 +149,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
-  app.put("/api/grafana/organizations/:id", requireAuth, async (req, res, next) => {
+  app.put("/api/grafana/organizations/:id", async (req, res, next) => {
     try {
       const id = parseInt(req.params.id);
       const orgData = insertGrafanaOrgSchema.partial().parse(req.body);
@@ -163,7 +166,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
-  app.delete("/api/grafana/organizations/:id", requireAuth, async (req, res, next) => {
+  app.delete("/api/grafana/organizations/:id", async (req, res, next) => {
     try {
       const id = parseInt(req.params.id);
       await storage.deleteGrafanaOrganization(id);
@@ -174,7 +177,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   });
 
   // Grafana Teams API
-  app.get("/api/grafana/teams", requireAuth, async (req, res, next) => {
+  app.get("/api/grafana/teams", async (req, res, next) => {
     try {
       const orgId = req.query.orgId ? parseInt(req.query.orgId.toString()) : undefined;
       const teams = await storage.getGrafanaTeams(orgId);
@@ -184,7 +187,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
-  app.get("/api/grafana/teams/:id", requireAuth, async (req, res, next) => {
+  app.get("/api/grafana/teams/:id", async (req, res, next) => {
     try {
       const id = parseInt(req.params.id);
       const team = await storage.getGrafanaTeam(id);
@@ -199,7 +202,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
-  app.post("/api/grafana/teams", requireAuth, async (req, res, next) => {
+  app.post("/api/grafana/teams", async (req, res, next) => {
     try {
       const teamData = insertGrafanaTeamSchema.parse(req.body);
       const team = await storage.createGrafanaTeam(teamData);
@@ -209,7 +212,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
-  app.put("/api/grafana/teams/:id", requireAuth, async (req, res, next) => {
+  app.put("/api/grafana/teams/:id", async (req, res, next) => {
     try {
       const id = parseInt(req.params.id);
       const teamData = insertGrafanaTeamSchema.partial().parse(req.body);
@@ -226,7 +229,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
-  app.delete("/api/grafana/teams/:id", requireAuth, async (req, res, next) => {
+  app.delete("/api/grafana/teams/:id", async (req, res, next) => {
     try {
       const id = parseInt(req.params.id);
       await storage.deleteGrafanaTeam(id);
@@ -237,7 +240,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   });
 
   // User Organization Membership API
-  app.post("/api/grafana/users/:userId/organizations/:orgId", requireAuth, async (req, res, next) => {
+  app.post("/api/grafana/users/:userId/organizations/:orgId", async (req, res, next) => {
     try {
       const userId = parseInt(req.params.userId);
       const orgId = parseInt(req.params.orgId);
@@ -257,7 +260,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
-  app.delete("/api/grafana/users/:userId/organizations/:orgId", requireAuth, async (req, res, next) => {
+  app.delete("/api/grafana/users/:userId/organizations/:orgId", async (req, res, next) => {
     try {
       const userId = parseInt(req.params.userId);
       const orgId = parseInt(req.params.orgId);
@@ -270,7 +273,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   });
 
   // User Team Membership API
-  app.post("/api/grafana/users/:userId/teams/:teamId", requireAuth, async (req, res, next) => {
+  app.post("/api/grafana/users/:userId/teams/:teamId", async (req, res, next) => {
     try {
       const userId = parseInt(req.params.userId);
       const teamId = parseInt(req.params.teamId);
@@ -286,7 +289,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
-  app.delete("/api/grafana/users/:userId/teams/:teamId", requireAuth, async (req, res, next) => {
+  app.delete("/api/grafana/users/:userId/teams/:teamId", async (req, res, next) => {
     try {
       const userId = parseInt(req.params.userId);
       const teamId = parseInt(req.params.teamId);
@@ -299,7 +302,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   });
 
   // Synchronization API
-  app.get("/api/sync/logs", requireAuth, async (req, res, next) => {
+  app.get("/api/sync/logs", async (req, res, next) => {
     try {
       const limit = req.query.limit ? parseInt(req.query.limit.toString()) : undefined;
       const logs = await storage.getSyncLogs(limit);
@@ -309,7 +312,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
-  app.post("/api/sync/opoppo", requireAuth, async (req, res, next) => {
+  app.post("/api/sync/opoppo", async (req, res, next) => {
     try {
       const count = await opoppoApi.syncOPoppoUsersToGrafana();
       res.json({ count, status: "success" });
@@ -318,7 +321,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
-  app.post("/api/sync/grafana", requireAuth, async (req, res, next) => {
+  app.post("/api/sync/grafana", async (req, res, next) => {
     try {
       const result = await grafanaApi.runFullSync();
       res.json({ ...result, status: "success" });
@@ -328,7 +331,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   });
 
   // Opoppo API
-  app.get("/api/opoppo/users", requireAuth, async (req, res, next) => {
+  app.get("/api/opoppo/users", async (req, res, next) => {
     try {
       const users = await opoppoApi.getOPoppoUsers();
       res.json(users);
@@ -337,7 +340,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
-  app.get("/api/opoppo/companies", requireAuth, async (req, res, next) => {
+  app.get("/api/opoppo/companies", async (req, res, next) => {
     try {
       const companies = await opoppoApi.getOPoppoCompanies();
       res.json(companies);
@@ -346,7 +349,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
-  app.get("/api/opoppo/organizations", requireAuth, async (req, res, next) => {
+  app.get("/api/opoppo/organizations", async (req, res, next) => {
     try {
       const organizations = await opoppoApi.getOPoppoOrganizations();
       res.json(organizations);
@@ -355,7 +358,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
-  app.get("/api/opoppo/positions", requireAuth, async (req, res, next) => {
+  app.get("/api/opoppo/positions", async (req, res, next) => {
     try {
       const positions = await opoppoApi.getOPoppoPositions();
       res.json(positions);
@@ -365,7 +368,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   });
 
   // Settings API
-  app.get("/api/settings/:key", requireAuth, async (req, res, next) => {
+  app.get("/api/settings/:key", async (req, res, next) => {
     try {
       const key = req.params.key;
       const setting = await storage.getSetting(key);
@@ -380,7 +383,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
-  app.put("/api/settings/:key", requireAuth, async (req, res, next) => {
+  app.put("/api/settings/:key", async (req, res, next) => {
     try {
       const key = req.params.key;
       const { value } = req.body;
@@ -397,7 +400,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   });
 
   // Stats API for dashboard
-  app.get("/api/stats", requireAuth, async (req, res, next) => {
+  app.get("/api/stats", async (req, res, next) => {
     try {
       const totalUsers = await storage.countGrafanaUsers();
       const activeUsers = await storage.countGrafanaUsers('active');

@@ -7,10 +7,7 @@ import { users, grafanaUsers, grafanaOrganizations, grafanaTeams,
   type InsertSyncLog, type Setting, type InsertSetting } from "@shared/schema";
 import { db } from "./db";
 import { eq, desc, and, like, sql as sqlFn } from "drizzle-orm";
-import session from "express-session";
-import createMemoryStore from "memorystore";
-
-const MemoryStore = createMemoryStore(session);
+// 認証関連のimportを削除
 
 export interface IStorage {
   // Auth user operations
@@ -61,17 +58,12 @@ export interface IStorage {
   getSetting(key: string): Promise<Setting | undefined>;
   updateSetting(key: string, value: string): Promise<Setting>;
   
-  // Session store
-  sessionStore: session.SessionStore;
+  // セッションストア機能は削除しました
 }
 
 export class DatabaseStorage implements IStorage {
-  sessionStore: session.SessionStore;
-  
   constructor() {
-    this.sessionStore = new MemoryStore({
-      checkPeriod: 86400000, // 24h
-    });
+    // セッション関連の実装を削除
   }
   
   // Auth user operations

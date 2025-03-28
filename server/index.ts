@@ -2,9 +2,13 @@ import express, { type Request, Response, NextFunction } from "express";
 import { registerRoutes } from "./routes";
 import { setupVite, serveStatic, log } from "./vite";
 
+// 認証関連のimportを削除
+
 const app = express();
 app.use(express.json());
 app.use(express.urlencoded({ extended: false }));
+
+// 認証関連のミドルウェア設定を削除
 
 app.use((req, res, next) => {
   const start = Date.now();
