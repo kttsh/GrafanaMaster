@@ -45,11 +45,11 @@ export default function UserTable({
   
   // Fetch users with pagination and search
   const { data, isLoading, error } = useQuery({
-    queryKey: ["/api/grafana/users", page, pageSize, searchDebounced],
+    queryKey: ["/api/combined-users", page, pageSize, searchDebounced],
     queryFn: async () => {
       const offset = (page - 1) * pageSize;
       const searchParam = searchDebounced ? `&search=${encodeURIComponent(searchDebounced)}` : "";
-      const res = await fetch(`/api/grafana/users?limit=${pageSize}&offset=${offset}${searchParam}`);
+      const res = await fetch(`/api/combined-users?limit=${pageSize}&offset=${offset}${searchParam}`);
       if (!res.ok) throw new Error("Failed to fetch users");
       return res.json();
     },

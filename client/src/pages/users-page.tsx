@@ -3,6 +3,7 @@ import { useQuery } from "@tanstack/react-query";
 import MainLayout from "@/components/layout/main-layout";
 import UserTable from "@/components/ui/user-table";
 import AddUserDialog from "@/components/dialogs/add-user-dialog";
+import EditUserDialog from "@/components/dialogs/edit-user-dialog";
 import StatusCard from "@/components/ui/status-card";
 import { 
   User, 
@@ -32,6 +33,8 @@ import { useToast } from "@/hooks/use-toast";
 export default function UsersPage() {
   const { toast } = useToast();
   const [isAddUserOpen, setIsAddUserOpen] = useState(false);
+  const [isEditUserOpen, setIsEditUserOpen] = useState(false);
+  const [editUserId, setEditUserId] = useState<number | null>(null);
   const [deleteUserId, setDeleteUserId] = useState<number | null>(null);
   const [activeTab, setActiveTab] = useState("all");
   const [search, setSearch] = useState("");
@@ -114,11 +117,8 @@ export default function UsersPage() {
   };
 
   const handleEditUser = (userId: number) => {
-    // Implement edit user functionality
-    toast({
-      title: "Edit User",
-      description: `Editing user with ID: ${userId}`,
-    });
+    setEditUserId(userId);
+    setIsEditUserOpen(true);
   };
 
   return (
@@ -232,6 +232,18 @@ export default function UsersPage() {
         isOpen={isAddUserOpen} 
         onClose={() => setIsAddUserOpen(false)} 
       />
+
+      {/* Edit User Dialog */}
+      {editUserId && (
+        <EditUserDialog
+          isOpen={isEditUserOpen}
+          onClose={() => {
+            setIsEditUserOpen(false);
+            setEditUserId(null);
+          }}
+          userId={editUserId}
+        />
+      )}
 
       {/* Delete Confirmation Dialog */}
       <AlertDialog open={deleteUserId !== null} onOpenChange={(open) => !open && setDeleteUserId(null)}>

@@ -116,6 +116,23 @@ export async function registerRoutes(app: Express): Promise<Server> {
       next(error);
     }
   });
+  
+  app.patch("/api/grafana/users/:id", async (req, res, next) => {
+    try {
+      const id = parseInt(req.params.id);
+      const userData = grafanaUserSchema.partial().parse(req.body);
+      
+      const user = await storage.updateGrafanaUser(id, userData);
+      
+      if (!user) {
+        return res.status(404).json({ message: "User not found" });
+      }
+      
+      res.json(user);
+    } catch (error) {
+      next(error);
+    }
+  });
 
   app.delete("/api/grafana/users/:id", async (req, res, next) => {
     try {
@@ -268,6 +285,30 @@ export async function registerRoutes(app: Express): Promise<Server> {
   });
 
   // User Organization Membership API
+  app.get("/api/grafana/users/:userId/organizations", async (req, res, next) => {
+    try {
+      const userId = parseInt(req.params.userId);
+      const memberships = await storage.getUserOrgMemberships(userId);
+      
+      // Get organization details for each membership
+      const organizations = await Promise.all(
+        memberships.map(async (membership) => {
+          const org = await storage.getGrafanaOrganization(membership.orgId);
+          return {
+            id: membership.orgId,
+            role: membership.role,
+            isDefault: membership.isDefault,
+            name: org?.name || "Unknown",
+          };
+        })
+      );
+      
+      res.json(organizations);
+    } catch (error) {
+      next(error);
+    }
+  });
+    
   app.post("/api/grafana/users/:userId/organizations/:orgId", async (req, res, next) => {
     try {
       const userId = parseInt(req.params.userId);
