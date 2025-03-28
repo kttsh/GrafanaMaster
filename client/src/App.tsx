@@ -1,29 +1,29 @@
 
-import { Switch, Route } from "wouter";
-import { QueryClientProvider } from "@tanstack/react-query";
-import { queryClient } from "./lib/queryClient";
-import { Toaster } from "@/components/ui/toaster";
-import DashboardPage from "@/pages/dashboard-page";
-import UsersPage from "@/pages/users-page";
-import NotFound from "@/pages/not-found";
+import React from 'react';
+import { Route, Switch } from 'wouter';
+import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 
-function Router() {
-  return (
-    <Switch>
-      <Route path="/" component={DashboardPage} />
-      <Route path="/users" component={UsersPage} />
-      <Route component={NotFound} />
-    </Switch>
-  );
-}
+const queryClient = new QueryClient();
 
-function App() {
+export default function App() {
   return (
     <QueryClientProvider client={queryClient}>
-      <Router />
-      <Toaster />
+      <div className="min-h-screen bg-background">
+        <main className="container mx-auto p-4">
+          <Switch>
+            <Route path="/" component={HomePage} />
+          </Switch>
+        </main>
+      </div>
     </QueryClientProvider>
   );
 }
 
-export default App;
+function HomePage() {
+  return (
+    <div className="prose">
+      <h1>Grafana Management System</h1>
+      <p>Welcome to the simplified management interface.</p>
+    </div>
+  );
+}
