@@ -7,8 +7,7 @@ import {
   Users, 
   Building, 
   Users2, 
-  RefreshCw, 
-  Settings
+  RefreshCw
 } from "lucide-react";
 
 type NavItem = {
@@ -42,11 +41,6 @@ const navItems: NavItem[] = [
     title: "Synchronization",
     href: "/sync",
     icon: <RefreshCw className="h-5 w-5" />,
-  },
-  {
-    title: "Settings",
-    href: "/settings",
-    icon: <Settings className="h-5 w-5" />,
   },
 ];
 

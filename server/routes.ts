@@ -395,37 +395,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
-  // Settings API
-  app.get("/api/settings/:key", async (req, res, next) => {
-    try {
-      const key = req.params.key;
-      const setting = await storage.getSetting(key);
-      
-      if (!setting) {
-        return res.status(404).json({ message: "Setting not found" });
-      }
-      
-      res.json(setting);
-    } catch (error) {
-      next(error);
-    }
-  });
-
-  app.put("/api/settings/:key", async (req, res, next) => {
-    try {
-      const key = req.params.key;
-      const { value } = req.body;
-      
-      if (typeof value !== "string") {
-        return res.status(400).json({ message: "Value must be a string" });
-      }
-      
-      const setting = await storage.updateSetting(key, value);
-      res.json(setting);
-    } catch (error) {
-      next(error);
-    }
-  });
+  // Settings APIはシステム側で管理する形で削除しました
 
   // Stats API for dashboard
   app.get("/api/stats", async (req, res, next) => {
