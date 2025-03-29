@@ -1,5 +1,7 @@
 import { useAuth } from "@/hooks/use-auth";
 import { Button } from "@/components/ui/button";
+import { Avatar, AvatarFallback } from "@/components/ui/avatar";
+import { Badge } from "@/components/ui/badge";
 import { 
   DropdownMenu,
   DropdownMenuContent,
@@ -8,8 +10,15 @@ import {
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
-import { CheckCircle, LogOut, AlertTriangle, User } from "lucide-react";
-import { formatDate } from "@/lib/utils";
+import { 
+  CheckCircle, 
+  LogOut, 
+  AlertTriangle, 
+  User, 
+  ChevronDown,
+  Clock 
+} from "lucide-react";
+import { cn, formatDate } from "@/lib/utils";
 
 interface HeaderProps {
   selectedOrg?: string;
@@ -19,13 +28,17 @@ interface HeaderProps {
   syncStatus?: "success" | "error" | "none";
 }
 
-export default function Header({
+/**
+ * ヘッダーコンポーネント
+ * React 19では関数コンポーネントはarrow functionでの定義が推奨されています
+ */
+const Header = ({
   selectedOrg = "Acme Corporation",
   orgs = [],
   onOrgChange,
   lastSyncTime,
   syncStatus = "none",
-}: HeaderProps) {
+}: HeaderProps) => {
   const { user, logoutMutation } = useAuth();
   
   const handleLogout = () => {
@@ -42,26 +55,24 @@ export default function Header({
         </div>
         
         {/* Organization Selector */}
-        {orgs.length > 0 && (
+        {orgs && orgs.length > 0 && (
           <div className="relative hidden md:block">
             <DropdownMenu>
               <DropdownMenuTrigger asChild>
-                <Button variant="ghost" className="flex items-center space-x-2 px-3 py-1 rounded hover:bg-grafana-dark-100 transition-colors">
-                  <span className="text-grafana-text">{selectedOrg}</span>
-                  <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="h-4 w-4 text-grafana-text">
-                    <path d="m6 9 6 6 6-6" />
-                  </svg>
+                <Button variant="outline" size="sm" className="h-8 bg-grafana-dark-200 border-grafana-dark-100 text-grafana-text hover:bg-grafana-dark-100 hover:text-white">
+                  <span className="mr-1">{selectedOrg}</span>
+                  <ChevronDown className="h-4 w-4" />
                 </Button>
               </DropdownMenuTrigger>
-              <DropdownMenuContent align="start" className="bg-grafana-dark-100 border-grafana-dark-200 text-grafana-text">
-                <DropdownMenuLabel>Switch Organization</DropdownMenuLabel>
-                <DropdownMenuSeparator className="bg-grafana-dark-200" />
+              <DropdownMenuContent align="start" className="bg-grafana-dark-200 border-grafana-dark-100 text-grafana-text">
+                <DropdownMenuLabel>組織の切り替え</DropdownMenuLabel>
+                <DropdownMenuSeparator className="bg-grafana-dark-100" />
                 {orgs.map((org) => (
                   <DropdownMenuItem 
                     key={org.id}
                     onClick={() => onOrgChange?.(org.id)}
                     className={cn(
-                      "cursor-pointer hover:bg-grafana-dark-200 hover:text-white",
+                      "cursor-pointer hover:bg-grafana-dark-100 hover:text-white",
                       org.name === selectedOrg && "text-grafana-orange font-medium"
                     )}
                   >
@@ -74,42 +85,48 @@ export default function Header({
         )}
       </div>
 
-      <div className="flex items-center space-x-2">
+      <div className="flex items-center space-x-3">
         {/* Sync Status */}
-        {syncStatus !== "none" && (
-          <div className={cn(
-            "hidden md:flex items-center text-sm mr-2",
-            syncStatus === "success" ? "text-grafana-success" : "text-grafana-error"
+        {syncStatus !== "none" && lastSyncTime && (
+          <Badge variant="outline" className={cn(
+            "hidden md:flex items-center gap-1 px-2 py-1 h-8 border",
+            syncStatus === "success" 
+              ? "text-grafana-green border-grafana-green/30 bg-grafana-green/10" 
+              : "text-grafana-error border-grafana-error/30 bg-grafana-error/10"
           )}>
             {syncStatus === "success" ? (
-              <CheckCircle className="mr-1 h-4 w-4" />
+              <CheckCircle className="h-3.5 w-3.5" />
             ) : (
-              <AlertTriangle className="mr-1 h-4 w-4" />
+              <AlertTriangle className="h-3.5 w-3.5" />
             )}
-            <span>Last sync: {formatDate(lastSyncTime)}</span>
-          </div>
+            <Clock className="h-3.5 w-3.5 mx-0.5" />
+            <span className="text-xs font-medium">{formatDate(lastSyncTime)}</span>
+          </Badge>
         )}
         
         {/* User Menu */}
         {user && (
           <DropdownMenu>
             <DropdownMenuTrigger asChild>
-              <Button variant="ghost" className="flex items-center space-x-2 px-2 py-1 rounded hover:bg-grafana-dark-100 transition-colors">
-                <div className="w-8 h-8 bg-grafana-dark-100 rounded-full flex items-center justify-center text-white">
-                  <User className="h-4 w-4" />
-                </div>
-                <span className="hidden md:inline-block text-grafana-text">{user.username}</span>
+              <Button variant="ghost" size="sm" className="h-8 flex items-center gap-2 hover:bg-grafana-dark-100">
+                <Avatar className="h-7 w-7 bg-grafana-dark-100">
+                  <AvatarFallback className="bg-grafana-orange text-white text-xs">
+                    {user.username.substring(0, 2).toUpperCase()}
+                  </AvatarFallback>
+                </Avatar>
+                <span className="hidden md:inline-block text-grafana-text text-sm">{user.username}</span>
+                <ChevronDown className="h-4 w-4 text-grafana-text" />
               </Button>
             </DropdownMenuTrigger>
-            <DropdownMenuContent align="end" className="bg-grafana-dark-100 border-grafana-dark-200 text-grafana-text">
-              <DropdownMenuLabel>My Account</DropdownMenuLabel>
-              <DropdownMenuSeparator className="bg-grafana-dark-200" />
+            <DropdownMenuContent align="end" className="bg-grafana-dark-200 border-grafana-dark-100 text-grafana-text">
+              <DropdownMenuLabel>マイアカウント</DropdownMenuLabel>
+              <DropdownMenuSeparator className="bg-grafana-dark-100" />
               <DropdownMenuItem 
                 onClick={handleLogout}
-                className="cursor-pointer hover:bg-grafana-dark-200 hover:text-white"
+                className="cursor-pointer hover:bg-grafana-dark-100 hover:text-white focus:bg-grafana-dark-100 focus:text-white"
               >
                 <LogOut className="mr-2 h-4 w-4" />
-                <span>Log out</span>
+                <span>ログアウト</span>
               </DropdownMenuItem>
             </DropdownMenuContent>
           </DropdownMenu>
@@ -117,6 +134,6 @@ export default function Header({
       </div>
     </header>
   );
-}
+};
 
-import { cn } from "@/lib/utils";
+export default Header;

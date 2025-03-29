@@ -11,10 +11,21 @@ export const useAuth = () => {
     role: 'admin',
   };
   
+  // 簡易的なログアウト処理
+  const logoutMutation = {
+    mutate: () => console.log('ログアウト機能は本システムでは無効です'),
+    isPending: false,
+    isSuccess: false,
+    isError: false,
+    error: null,
+    reset: () => {},
+  };
+  
   return {
     user,
     isLoading: false,
     error: null,
+    logoutMutation, // Headerコンポーネントのためにmutationオブジェクトを追加
   };
 };
 
