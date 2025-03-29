@@ -389,6 +389,16 @@ export async function registerRoutes(app: Express): Promise<Server> {
       next(error);
     }
   });
+  
+  // 直接内部DBをOPoppoデータと同期するエンドポイント
+  app.post("/api/sync/opoppo-db", async (req, res, next) => {
+    try {
+      const count = await opoppoApi.syncOPoppoDB();
+      res.json({ count, status: "success" });
+    } catch (error) {
+      next(error);
+    }
+  });
 
   app.post("/api/sync/grafana", async (req, res, next) => {
     try {

@@ -28,12 +28,18 @@ model User {
 model GrafanaUser {
   id            Int      @id @default(autoincrement())
   userId        String   @unique @map("user_id")
-  name          String
-  email         String
-  login         String
+  name          String?
+  email         String?
+  login         String?
+  department    String?
+  position      String?
+  company       String?
+  grafanaId     Int?     @map("grafana_id")
+  status        String   @default("pending")
+  lastLogin     DateTime? @map("last_login")
   isDisabled    Boolean  @default(false) @map("is_disabled")
   isExternal    Boolean  @default(false) @map("is_external")
-  authLabels    String[] @map("auth_labels")
+  authLabels    String[] @default([]) @map("auth_labels")
   lastSeenAt    DateTime? @map("last_seen_at")
   lastSeenAtAge String?  @map("last_seen_at_age")
   createdAt     DateTime @default(now()) @map("created_at")
@@ -49,6 +55,7 @@ model GrafanaUser {
 model GrafanaOrganization {
   id        Int      @id @default(autoincrement())
   name      String
+  grafanaId Int?     @map("grafana_id")
   address   Json?
   createdAt DateTime @default(now()) @map("created_at")
   updatedAt DateTime @default(now()) @updatedAt @map("updated_at")
@@ -65,6 +72,7 @@ model GrafanaTeam {
   name        String
   email       String?
   orgId       Int      @map("org_id")
+  grafanaId   Int?     @map("grafana_id")
   memberCount Int      @default(0) @map("member_count")
   createdAt   DateTime @default(now()) @map("created_at")
   updatedAt   DateTime @default(now()) @updatedAt @map("updated_at")
@@ -81,6 +89,7 @@ model UserOrgMembership {
   userId    Int      @map("user_id")
   orgId     Int      @map("org_id")
   role      String   @default("Viewer")
+  isDefault Boolean  @default(false) @map("is_default")
   createdAt DateTime @default(now()) @map("created_at")
   
   user  GrafanaUser          @relation(fields: [userId], references: [id], onDelete: Cascade)
@@ -123,4 +132,70 @@ model Setting {
   updatedAt DateTime @default(now()) @updatedAt @map("updated_at")
 
   @@map("settings")
+}
+
+// Opoppo User data
+model OPoppoUser {
+  id          Int      @id @default(autoincrement())
+  userId      String   @unique @map("user_id")
+  sei         String?
+  mei         String?
+  yakusyokuCd String?  @map("yakusyoku_cd")
+  kaisyaCd    String?  @map("kaisya_cd")
+  soshikiCd   String?  @map("soshiki_cd")
+  createdAt   DateTime @default(now()) @map("created_at")
+  updatedAt   DateTime @default(now()) @updatedAt @map("updated_at")
+  
+  position    OPoppoPosition? @relation(fields: [yakusyokuCd, kaisyaCd], references: [yakusyokuCd, kaisyaCd])
+  company     OPoppoCompany?  @relation(fields: [kaisyaCd], references: [kaisyaCd])
+  organization OPoppoOrganization? @relation(fields: [soshikiCd, kaisyaCd], references: [soshikiCd, kaisyaCd])
+
+  @@map("opoppo_users")
+}
+
+// Opoppo Company data
+model OPoppoCompany {
+  id        Int      @id @default(autoincrement())
+  kaisyaCd  String   @unique @map("kaisya_cd")
+  kaisyaNm  String?  @map("kaisya_nm")
+  createdAt DateTime @default(now()) @map("created_at")
+  updatedAt DateTime @default(now()) @updatedAt @map("updated_at")
+  
+  users         OPoppoUser[]
+  organizations OPoppoOrganization[]
+  positions     OPoppoPosition[]
+
+  @@map("opoppo_companies")
+}
+
+// Opoppo Organization data
+model OPoppoOrganization {
+  id        Int      @id @default(autoincrement())
+  kaisyaCd  String   @map("kaisya_cd")
+  soshikiCd String   @map("soshiki_cd")
+  soshikiNm String?  @map("soshiki_nm")
+  createdAt DateTime @default(now()) @map("created_at")
+  updatedAt DateTime @default(now()) @updatedAt @map("updated_at")
+  
+  company OPoppoCompany @relation(fields: [kaisyaCd], references: [kaisyaCd], onDelete: Cascade)
+  users   OPoppoUser[]
+
+  @@unique([soshikiCd, kaisyaCd])
+  @@map("opoppo_organizations")
+}
+
+// Opoppo Position data
+model OPoppoPosition {
+  id          Int      @id @default(autoincrement())
+  kaisyaCd    String   @map("kaisya_cd")
+  yakusyokuCd String   @map("yakusyoku_cd")
+  yakusyokuNm String?  @map("yakusyoku_nm")
+  createdAt   DateTime @default(now()) @map("created_at")
+  updatedAt   DateTime @default(now()) @updatedAt @map("updated_at")
+  
+  company OPoppoCompany @relation(fields: [kaisyaCd], references: [kaisyaCd], onDelete: Cascade)
+  users   OPoppoUser[]
+
+  @@unique([yakusyokuCd, kaisyaCd])
+  @@map("opoppo_positions")
 }

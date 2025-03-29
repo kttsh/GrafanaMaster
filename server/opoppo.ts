@@ -185,41 +185,175 @@ export async function getOPoppoPositions(): Promise<{ KAISYA_CD: string, YAKUSYO
   }
 }
 
+/**
+ * OPoppoデータをDB内部に同期する関数
+ * これによりAPIを経由せず、直接DBにアクセスする形式に変更
+ */
+export async function syncOPoppoDB(): Promise<number> {
+  try {
+    // ステップ1: OPoppo会社データを同期
+    const companies = await getOPoppoCompanies();
+    for (const company of companies) {
+      await prisma.oPoppoCompany.upsert({
+        where: { kaisyaCd: company.KAISYA_CD },
+        update: { kaisyaNm: company.KAISYA_NM },
+        create: {
+          kaisyaCd: company.KAISYA_CD,
+          kaisyaNm: company.KAISYA_NM
+        }
+      });
+    }
+    
+    // ステップ2: OPoppo組織データを同期
+    const organizations = await getOPoppoOrganizations();
+    for (const org of organizations) {
+      try {
+        await prisma.oPoppoOrganization.upsert({
+          where: {
+            soshikiCd_kaisyaCd: {
+              soshikiCd: org.SOSHIKI_CD,
+              kaisyaCd: org.KAISYA_CD
+            }
+          },
+          update: { soshikiNm: org.SOSHIKI_NM },
+          create: {
+            soshikiCd: org.SOSHIKI_CD,
+            kaisyaCd: org.KAISYA_CD,
+            soshikiNm: org.SOSHIKI_NM
+          }
+        });
+      } catch (error) {
+        console.error(`Error upserting organization ${org.SOSHIKI_CD}:`, error);
+      }
+    }
+    
+    // ステップ3: OPoppo役職データを同期
+    const positions = await getOPoppoPositions();
+    for (const position of positions) {
+      try {
+        await prisma.oPoppoPosition.upsert({
+          where: {
+            yakusyokuCd_kaisyaCd: {
+              yakusyokuCd: position.YAKUSYOKU_CD,
+              kaisyaCd: position.KAISYA_CD
+            }
+          },
+          update: { yakusyokuNm: position.YAKUSYOKU_NM },
+          create: {
+            yakusyokuCd: position.YAKUSYOKU_CD,
+            kaisyaCd: position.KAISYA_CD,
+            yakusyokuNm: position.YAKUSYOKU_NM
+          }
+        });
+      } catch (error) {
+        console.error(`Error upserting position ${position.YAKUSYOKU_CD}:`, error);
+      }
+    }
+    
+    // ステップ4: OPoppoユーザーデータを同期
+    const users = await getOPoppoUsers();
+    let count = 0;
+    
+    for (const user of users) {
+      try {
+        await prisma.oPoppoUser.upsert({
+          where: { userId: user.USER_ID },
+          update: {
+            sei: user.SEI,
+            mei: user.MEI,
+            yakusyokuCd: user.YAKUSYOKU_CD,
+            kaisyaCd: user.KAISYA_CD,
+            soshikiCd: user.SOSHIKI_CD
+          },
+          create: {
+            userId: user.USER_ID,
+            sei: user.SEI,
+            mei: user.MEI,
+            yakusyokuCd: user.YAKUSYOKU_CD,
+            kaisyaCd: user.KAISYA_CD,
+            soshikiCd: user.SOSHIKI_CD
+          }
+        });
+        count++;
+      } catch (error) {
+        console.error(`Error upserting user ${user.USER_ID}:`, error);
+      }
+    }
+    
+    // ログ記録
+    await storage.createSyncLog({
+      type: 'opoppo_db_sync',
+      status: 'success',
+      details: { 
+        companies: companies.length,
+        organizations: organizations.length,
+        positions: positions.length,
+        users: count
+      }
+    });
+    
+    return count;
+  } catch (error: any) {
+    console.error('Error synchronizing Opoppo data to internal DB:', error);
+    
+    await storage.createSyncLog({
+      type: 'opoppo_db_sync',
+      status: 'error',
+      details: { error: error.message || 'Unknown error' }
+    });
+    
+    throw error;
+  }
+}
+
+/**
+ * 内部DBのOPoppoデータからGrafanaユーザーを同期・更新する
+ */
 export async function syncOPoppoUsersToGrafana(): Promise<number> {
   try {
-    const opoppoUsers = await getOPoppoUsers();
+    // まず内部DBを最新のOPoppoデータで更新
+    await syncOPoppoDB();
+    
+    // 内部DB上のOPoppoユーザーデータを読み込む
+    const opoppoUsers = await prisma.oPoppoUser.findMany({
+      include: {
+        company: true,
+        organization: true,
+        position: true
+      }
+    });
+    
     let count = 0;
     
     for (const opoppoUser of opoppoUsers) {
       // 名前が無い場合はIDを使用
-      const name = opoppoUser.SEI || opoppoUser.MEI 
-        ? `${opoppoUser.SEI || ''} ${opoppoUser.MEI || ''}`.trim()
-        : opoppoUser.USER_ID;
-      const email = `${opoppoUser.USER_ID}@example.com`; // Create a default email if not available
+      const name = opoppoUser.sei || opoppoUser.mei 
+        ? `${opoppoUser.sei || ''} ${opoppoUser.mei || ''}`.trim()
+        : opoppoUser.userId;
+      const email = `${opoppoUser.userId}@example.com`; // Create a default email if not available
       
-      // Check if user already exists in our database
-      const existingUser = await storage.getGrafanaUserByUserId(opoppoUser.USER_ID);
+      // Check if user already exists in our Grafana database
+      const existingUser = await storage.getGrafanaUserByUserId(opoppoUser.userId);
       
       if (existingUser) {
         // Update existing user
         await storage.updateGrafanaUser(existingUser.id, {
           name,
-          department: opoppoUser.SOSHIKI_NM || null,
-          position: opoppoUser.YAKUSYOKU_NM || null,
-          company: opoppoUser.KAISYA_NM || null,
+          department: opoppoUser.organization?.soshikiNm || null,
+          position: opoppoUser.position?.yakusyokuNm || null,
+          company: opoppoUser.company?.kaisyaNm || null,
         });
       } else {
         // Create new user
-        // Prismaを直接使用して、InsertGrafanaUserの型の問題を回避
         const newUser = await prisma.grafanaUser.create({
           data: {
-            userId: opoppoUser.USER_ID,
-            name: name || null, // null for nullable field
+            userId: opoppoUser.userId,
+            name: name || null,
             email: email || null,
-            login: opoppoUser.USER_ID, // Use USER_ID as login name
-            department: opoppoUser.SOSHIKI_NM || null,
-            position: opoppoUser.YAKUSYOKU_NM || null,
-            company: opoppoUser.KAISYA_NM || null,
+            login: opoppoUser.userId,
+            department: opoppoUser.organization?.soshikiNm || null,
+            position: opoppoUser.position?.yakusyokuNm || null,
+            company: opoppoUser.company?.kaisyaNm || null,
             grafanaId: null,
             lastLogin: null,
             status: 'pending',
@@ -231,18 +365,18 @@ export async function syncOPoppoUsersToGrafana(): Promise<number> {
     
     // Log successful sync
     await storage.createSyncLog({
-      type: 'opoppo_to_db',
+      type: 'opoppo_to_grafana',
       status: 'success',
       details: { added: count, total: opoppoUsers.length }
     });
     
     return count;
   } catch (error: any) {
-    console.error('Error synchronizing Opoppo users:', error);
+    console.error('Error synchronizing Opoppo users to Grafana:', error);
     
     // Log error
     await storage.createSyncLog({
-      type: 'opoppo_to_db',
+      type: 'opoppo_to_grafana',
       status: 'error',
       details: { error: error.message || 'Unknown error' }
     });
