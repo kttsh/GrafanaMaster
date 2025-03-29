@@ -73,7 +73,7 @@ export default function UserTable({
             placeholder="Search users..."
             value={search}
             onChange={handleSearchChange}
-            className="w-full md:w-64 pl-10 pr-3 py-2 bg-grafana-dark border border-grafana-dark-200 rounded-md text-grafana-text placeholder-grafana-gray focus:outline-none focus:ring-1 focus:ring-grafana-orange"
+            className="w-full md:w-64 pl-10 pr-3 py-2 bg-grafana-dark border border-grafana-dark-200 rounded-md text-grafana-text placeholder-grafana-gray focus:outline-hidden focus:ring-1 focus:ring-grafana-orange"
           />
           <Search className="absolute left-3 top-2.5 h-5 w-5 text-grafana-gray" />
         </div>

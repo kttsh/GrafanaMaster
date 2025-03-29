@@ -241,7 +241,7 @@ export default function TeamsPage() {
               placeholder="Search teams..." 
               value={search}
               onChange={(e) => setSearch(e.target.value)}
-              className="pl-10 pr-3 py-2 bg-grafana-dark-100 border border-grafana-dark-200 rounded-md text-grafana-text placeholder-grafana-gray focus:outline-none focus:ring-1 focus:ring-grafana-orange w-full"
+              className="pl-10 pr-3 py-2 bg-grafana-dark-100 border border-grafana-dark-200 rounded-md text-grafana-text placeholder-grafana-gray focus:outline-hidden focus:ring-1 focus:ring-grafana-orange w-full"
             />
             <Search className="absolute left-3 top-2.5 h-5 w-5 text-grafana-gray" />
           </div>

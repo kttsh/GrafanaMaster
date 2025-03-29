@@ -54,7 +54,7 @@ export default function Sidebar({ onSyncClick, isSyncing = false }: SidebarProps
   const { user } = useAuth();
 
   return (
-    <aside className="w-14 md:w-64 bg-grafana-dark border-r border-grafana-dark-100 flex-shrink-0">
+    <aside className="w-14 md:w-64 bg-grafana-dark border-r border-grafana-dark-100 shrink-0">
       <nav className="p-2 h-full flex flex-col">
         <ul className="space-y-2 flex-1">
           {navItems.map((item) => (

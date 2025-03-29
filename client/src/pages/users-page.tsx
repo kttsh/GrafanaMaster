@@ -134,7 +134,7 @@ export default function UsersPage() {
               placeholder="Search users..." 
               value={search}
               onChange={(e) => setSearch(e.target.value)}
-              className="w-full md:w-64 pl-10 pr-3 py-2 bg-grafana-dark-100 border border-grafana-dark-200 rounded-md text-grafana-text placeholder-grafana-gray focus:outline-none focus:ring-1 focus:ring-grafana-orange"
+              className="w-full md:w-64 pl-10 pr-3 py-2 bg-grafana-dark-100 border border-grafana-dark-200 rounded-md text-grafana-text placeholder-grafana-gray focus:outline-hidden focus:ring-1 focus:ring-grafana-orange"
             />
             <svg xmlns="http://www.w3.org/2000/svg" className="absolute left-3 top-2.5 h-5 w-5 text-grafana-gray" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
               <circle cx="11" cy="11" r="8"></circle>
