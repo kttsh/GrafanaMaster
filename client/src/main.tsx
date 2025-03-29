@@ -2,4 +2,6 @@ import { createRoot } from "react-dom/client";
 import App from "./App";
 import "./index.css";
 
-createRoot(document.getElementById("root")!).render(<App />);
+// React 19では標準的なcreateRootの使用方法
+const root = createRoot(document.getElementById("root")!);
+root.render(<App />);

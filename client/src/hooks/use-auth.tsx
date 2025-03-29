@@ -1,8 +1,9 @@
 /**
  * 認証が不要なシステムのためのシンプル化されたauth hook
  * 常に認証済みの管理者ユーザーを返します
+ * React 19ではアロー関数スタイルとconstをより使用しています
  */
-export function useAuth() {
+export const useAuth = () => {
   const user = {
     id: 1,
     username: 'admin',
@@ -15,11 +16,12 @@ export function useAuth() {
     isLoading: false,
     error: null,
   };
-}
+};
 
 /**
  * 下位互換性のための空のプロバイダー実装
+ * React 19ではアロー関数スタイルとTypeScriptの型付けがより重要になっています
  */
-export function AuthProvider({ children }: { children: React.ReactNode }) {
+export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
   return <>{children}</>;
-}
+};
