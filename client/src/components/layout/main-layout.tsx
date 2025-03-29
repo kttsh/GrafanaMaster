@@ -4,28 +4,6 @@ import { apiRequest, queryClient } from "@/lib/queryClient";
 import Header from "./header";
 import Sidebar from "./sidebar";
 import { useToast } from "@/hooks/use-toast";
-import { cn } from "@/lib/utils";
-import { ScrollArea } from "@/components/ui/scroll-area";
-import { Loader2 } from "lucide-react";
-
-interface StatsResponse {
-  totalUsers: number;
-  activeUsers: number;
-  pendingUsers: number;
-  disabledUsers: number;
-  totalOrgs: number;
-  totalTeams: number;
-  lastSync?: {
-    time: string;
-    status: "success" | "error";
-    type: string;
-  };
-}
-
-interface Organization {
-  id: number;
-  name: string;
-}
 
 interface MainLayoutProps {
   children: ReactNode;
@@ -33,26 +11,22 @@ interface MainLayoutProps {
   subtitle?: string;
 }
 
-/**
- * メインレイアウトコンポーネント
- * React 19では関数コンポーネントはarrow functionでの定義が推奨されています
- */
-const MainLayout = ({
+export default function MainLayout({
   children,
   title,
   subtitle,
-}: MainLayoutProps) => {
+}: MainLayoutProps) {
   const { toast } = useToast();
   const [isSyncing, setIsSyncing] = useState(false);
   
   // Get statistics for the last sync info
-  const { data: stats, isLoading: isStatsLoading } = useQuery<StatsResponse>({
+  const { data: stats } = useQuery({
     queryKey: ["/api/stats"],
     staleTime: 60000, // 1 minute
   });
   
   // Get organizations for the org selector
-  const { data: organizations, isLoading: isOrgsLoading } = useQuery<Organization[]>({
+  const { data: organizations } = useQuery({
     queryKey: ["/api/grafana/organizations"],
   });
   
@@ -67,11 +41,8 @@ const MainLayout = ({
     },
     onSuccess: () => {
       toast({
-        title: "同期が完了しました",
-        description: "ユーザーデータの同期が正常に完了しました。",
-        className: cn(
-          "bg-grafana-dark-200 border-grafana-green text-grafana-text"
-        ),
+        title: "Synchronization completed",
+        description: "Users have been synchronized successfully.",
       });
       // Invalidate queries that might have changed
       queryClient.invalidateQueries({ queryKey: ["/api/stats"] });
@@ -80,14 +51,11 @@ const MainLayout = ({
       queryClient.invalidateQueries({ queryKey: ["/api/grafana/teams"] });
       queryClient.invalidateQueries({ queryKey: ["/api/sync/logs"] });
     },
-    onError: (error: Error) => {
+    onError: (error) => {
       toast({
-        title: "同期に失敗しました",
+        title: "Synchronization failed",
         description: error.message,
         variant: "destructive",
-        className: cn(
-          "bg-grafana-dark-200 border-grafana-error text-grafana-text"
-        ),
       });
     },
     onSettled: () => {
@@ -99,14 +67,12 @@ const MainLayout = ({
     syncMutation.mutate();
   };
 
-  const isLoading = isStatsLoading || isOrgsLoading;
-
   return (
-    <div className="h-screen flex flex-col bg-grafana-dark">
+    <div className="h-screen flex flex-col bg-grafana-black">
       <Header 
         lastSyncTime={stats?.lastSync?.time}
         syncStatus={stats?.lastSync?.status === "success" ? "success" : stats?.lastSync ? "error" : "none"}
-        orgs={organizations || []}
+        orgs={organizations}
       />
       
       <div className="flex flex-1 overflow-hidden">
@@ -115,33 +81,21 @@ const MainLayout = ({
           isSyncing={isSyncing}
         />
         
-        <main className="flex-1 overflow-hidden">
-          <ScrollArea className="h-full w-full grafana-scrollbar">
-            <div className="p-4 md:p-6">
-              {isLoading ? (
-                <div className="flex items-center justify-center h-20">
-                  <Loader2 className="h-8 w-8 animate-spin text-grafana-orange" />
+        <main className="flex-1 overflow-auto grafana-scrollbar">
+          <div className="p-4 md:p-6">
+            {(title || subtitle) && (
+              <div className="flex flex-col md:flex-row md:items-center justify-between mb-6">
+                <div>
+                  {title && <h1 className="text-2xl font-semibold text-white mb-1">{title}</h1>}
+                  {subtitle && <p className="text-grafana-text">{subtitle}</p>}
                 </div>
-              ) : (
-                <>
-                  {(title || subtitle) && (
-                    <div className="flex flex-col md:flex-row md:items-center justify-between mb-6 border-b border-grafana-dark-100 pb-4">
-                      <div>
-                        {title && <h1 className="text-2xl font-semibold text-white mb-1">{title}</h1>}
-                        {subtitle && <p className="text-grafana-text text-sm">{subtitle}</p>}
-                      </div>
-                    </div>
-                  )}
-                  
-                  {children}
-                </>
-              )}
-            </div>
-          </ScrollArea>
+              </div>
+            )}
+            
+            {children}
+          </div>
         </main>
       </div>
     </div>
   );
-};
-
-export default MainLayout;
+}

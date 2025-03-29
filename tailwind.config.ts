@@ -1,4 +1,5 @@
-/** @type {import('tailwindcss').Config} */
+import type { Config } from "tailwindcss";
+
 export default {
   darkMode: "class",
   content: ["./client/index.html", "./client/src/**/*.{js,jsx,ts,tsx}"],
@@ -71,16 +72,23 @@ export default {
           ring: "hsl(var(--sidebar-ring))",
         },
       },
-      // TailwindCSS v4ではアニメーション構文が変更されました
       keyframes: {
-        "accordion-down": [
-          { height: "0" },
-          { height: "var(--radix-accordion-content-height)" }
-        ],
-        "accordion-up": [
-          { height: "var(--radix-accordion-content-height)" },
-          { height: "0" }
-        ],
+        "accordion-down": {
+          from: {
+            height: "0",
+          },
+          to: {
+            height: "var(--radix-accordion-content-height)",
+          },
+        },
+        "accordion-up": {
+          from: {
+            height: "var(--radix-accordion-content-height)",
+          },
+          to: {
+            height: "0",
+          },
+        },
       },
       animation: {
         "accordion-down": "accordion-down 0.2s ease-out",
@@ -88,9 +96,5 @@ export default {
       },
     },
   },
-  // TailwindCSS v4ではプラグインの形式が変わりました
-  plugins: [
-    require("@tailwindcss/typography"),
-    require("tailwindcss-animate"),
-  ],
-};
+  plugins: [require("tailwindcss-animate"), require("@tailwindcss/typography")],
+} satisfies Config;

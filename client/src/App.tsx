@@ -1,8 +1,7 @@
-import { Switch, Route, Router as RouteRouter } from "wouter";
+import { Switch, Route } from "wouter";
 import { queryClient } from "./lib/queryClient";
 import { QueryClientProvider } from "@tanstack/react-query";
 import { Toaster } from "@/components/ui/toaster";
-import { AuthProvider } from "@/hooks/use-auth";
 import NotFound from "@/pages/not-found";
 import DashboardPage from "@/pages/dashboard-page";
 import UsersPage from "@/pages/users-page";
@@ -12,9 +11,8 @@ import SyncPage from "@/pages/sync-page";
 
 /**
  * アプリケーションのルートルーター
- * React 19では関数コンポーネントはarrow functionでの定義が推奨されています
  */
-const Router = () => {
+function Router() {
   return (
     <Switch>
       <Route path="/" component={DashboardPage} />
@@ -26,23 +24,20 @@ const Router = () => {
       <Route component={NotFound} />
     </Switch>
   );
-};
+}
 
 /**
  * メインアプリケーションコンポーネント
- * React 19では関数コンポーネントはarrow functionでの定義が推奨されています
  */
-const App = () => {
+function App() {
   return (
     <div className="dark">
       <QueryClientProvider client={queryClient}>
-        <AuthProvider>
-          <Router />
-          <Toaster />
-        </AuthProvider>
+        <Router />
+        <Toaster />
       </QueryClientProvider>
     </div>
   );
-};
+}
 
 export default App;

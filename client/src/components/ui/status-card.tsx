@@ -10,81 +10,46 @@ interface StatusCardProps {
   color: "blue" | "green" | "yellow" | "red" | "purple";
 }
 
-/**
- * ステータスカードコンポーネント
- * React 19では関数コンポーネントはarrow functionでの定義が推奨されています
- */
-const StatusCard = ({
+export default function StatusCard({
   title,
   value,
   subtitle,
   icon,
   color = "blue",
-}: StatusCardProps) => {
+}: StatusCardProps) {
   const getColorClasses = () => {
     switch (color) {
       case "blue":
-        return { 
-          bg: "bg-grafana-blue/20", 
-          text: "text-grafana-blue",
-          border: "border-grafana-blue/30"
-        };
+        return { bg: "bg-blue-500/20", text: "text-blue-400" };
       case "green":
-        return { 
-          bg: "bg-grafana-green/20", 
-          text: "text-grafana-green",
-          border: "border-grafana-green/30"
-        };
+        return { bg: "bg-grafana-success/20", text: "text-grafana-success" };
       case "yellow":
-        return { 
-          bg: "bg-yellow-500/20", 
-          text: "text-yellow-400",
-          border: "border-yellow-500/30"
-        };
+        return { bg: "bg-grafana-warning/20", text: "text-grafana-warning" };
       case "red":
-        return { 
-          bg: "bg-grafana-error/20", 
-          text: "text-grafana-error",
-          border: "border-grafana-error/30"
-        };
+        return { bg: "bg-grafana-error/20", text: "text-grafana-error" };
       case "purple":
-        return { 
-          bg: "bg-purple-500/20", 
-          text: "text-purple-400",
-          border: "border-purple-500/30"
-        };
+        return { bg: "bg-purple-500/20", text: "text-purple-400" };
       default:
-        return { 
-          bg: "bg-grafana-blue/20", 
-          text: "text-grafana-blue",
-          border: "border-grafana-blue/30"
-        };
+        return { bg: "bg-blue-500/20", text: "text-blue-400" };
     }
   };
 
-  const { bg, text, border } = getColorClasses();
+  const { bg, text } = getColorClasses();
 
   return (
-    <Card className={cn(
-      "bg-grafana-dark-200 border shadow-lg overflow-hidden",
-      border
-    )}>
-      <CardContent className="p-5">
-        <div className="flex items-center justify-between mb-3">
-          <h3 className="text-grafana-text font-medium text-sm">{title}</h3>
-          <div className={cn("w-10 h-10 rounded-lg flex items-center justify-center", bg)}>
-            <div className={cn(text)}>{icon}</div>
+    <Card className="bg-grafana-dark-100 border border-grafana-dark-200 rounded-md">
+      <CardContent className="p-4">
+        <div className="flex items-center justify-between">
+          <h3 className="text-grafana-text font-medium">{title}</h3>
+          <div className={cn("w-10 h-10 rounded-md flex items-center justify-center", bg)}>
+            <div className={cn("text-xl", text)}>{icon}</div>
           </div>
         </div>
-        <div>
-          <p className="text-2xl font-bold text-white mb-1">{value}</p>
-          {subtitle && (
-            <p className="text-xs text-grafana-text/80">{subtitle}</p>
-          )}
+        <div className="mt-2">
+          <p className="text-2xl font-semibold text-white">{value}</p>
+          {subtitle && <p className="text-xs text-grafana-text">{subtitle}</p>}
         </div>
       </CardContent>
     </Card>
   );
-};
-
-export default StatusCard;
+}
