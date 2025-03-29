@@ -3,7 +3,6 @@ import MainLayout from "@/components/layout/main-layout";
 import StatusCard from "@/components/ui/status-card";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { 
-  BarChart3, 
   User, 
   UserCheck, 
   Clock, 
@@ -12,19 +11,40 @@ import {
   ArrowUpRight,
   ArrowDownRight
 } from "lucide-react";
-import { formatDate } from "@/lib/utils";
+import { cn, formatDate } from "@/lib/utils";
 import { Skeleton } from "@/components/ui/skeleton";
 import { BarChart, Bar, XAxis, YAxis, Tooltip, ResponsiveContainer } from "recharts";
 
-export default function DashboardPage() {
+interface SyncLog {
+  id: number;
+  type: string;
+  status: string;
+  details?: any;
+  createdAt: string;
+}
+
+interface Stats {
+  totalUsers: number;
+  activeUsers: number;
+  pendingUsers: number;
+  disabledUsers: number;
+  totalOrgs: number;
+  totalTeams: number;
+}
+
+/**
+ * ダッシュボードページコンポーネント
+ * React 19では関数コンポーネントはarrow functionでの定義が推奨されています
+ */
+const DashboardPage = () => {
   // Fetch dashboard statistics
-  const { data: stats, isLoading } = useQuery({
+  const { data: stats, isLoading } = useQuery<Stats>({
     queryKey: ["/api/stats"],
     refetchInterval: 30000, // Refresh every 30 seconds
   });
 
   // Fetch sync logs
-  const { data: syncLogs, isLoading: isLoadingSyncLogs } = useQuery({
+  const { data: syncLogs, isLoading: isLoadingSyncLogs } = useQuery<SyncLog[]>({
     queryKey: ["/api/sync/logs"],
     queryFn: async () => {
       const res = await fetch("/api/sync/logs?limit=5");
@@ -42,53 +62,60 @@ export default function DashboardPage() {
     { name: 'HR', users: 16, orgs: 1 },
   ];
 
+  // 統計データが利用可能な場合にのみ割合を計算
+  const calculatePercentage = (): string => {
+    if (!stats || stats.totalUsers === 0) return "";
+    const percentage = Math.round((stats.activeUsers / stats.totalUsers) * 100);
+    return `全体の${percentage}%`;
+  };
+
   return (
     <MainLayout
-      title="Dashboard"
-      subtitle="Overview of Grafana master management system"
+      title="ダッシュボード"
+      subtitle="Grafanaマスター管理システムの概要"
     >
-      {/* Status Cards */}
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 mb-6">
+      {/* ステータスカード */}
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 mb-6">
         <StatusCard
-          title="Total Users"
+          title="ユーザー総数"
           value={isLoading ? "-" : stats?.totalUsers || 0}
-          subtitle="All registered users"
-          icon={<User />}
+          subtitle="登録ユーザー全体"
+          icon={<User className="h-6 w-6" />}
           color="blue"
         />
         <StatusCard
-          title="Active Users"
+          title="アクティブユーザー"
           value={isLoading ? "-" : stats?.activeUsers || 0}
-          subtitle={isLoading ? "" : `${Math.round((stats?.activeUsers / stats?.totalUsers || 0) * 100)}% of total users`}
-          icon={<UserCheck />}
+          subtitle={isLoading ? "" : calculatePercentage()}
+          icon={<UserCheck className="h-6 w-6" />}
           color="green"
         />
         <StatusCard
-          title="Pending Users"
+          title="保留中ユーザー"
           value={isLoading ? "-" : stats?.pendingUsers || 0}
-          subtitle="Need activation"
-          icon={<Clock />}
+          subtitle="アクティベーション待ち"
+          icon={<Clock className="h-6 w-6" />}
           color="yellow"
         />
         <StatusCard
-          title="Organizations"
-          value={isLoading ? "-" : stats?.organizations || 0}
-          subtitle="Across companies"
-          icon={<Building />}
+          title="組織"
+          value={isLoading ? "-" : stats?.totalOrgs || 0}
+          subtitle="会社全体"
+          icon={<Building className="h-6 w-6" />}
           color="purple"
         />
       </div>
 
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 mb-6">
-        {/* User Distribution Chart */}
-        <Card className="lg:col-span-2 bg-grafana-dark-100 border-grafana-dark-200">
-          <CardHeader>
-            <CardTitle className="text-white text-lg">User Distribution by Department</CardTitle>
+        {/* ユーザー分布チャート */}
+        <Card className="lg:col-span-2 bg-grafana-dark-200 border-grafana-dark-100">
+          <CardHeader className="pb-2">
+            <CardTitle className="text-white text-lg font-medium">部門別ユーザー分布</CardTitle>
           </CardHeader>
           <CardContent>
             <div className="h-80">
               <ResponsiveContainer width="100%" height="100%">
-                <BarChart data={chartData}>
+                <BarChart data={chartData} margin={{ top: 10, right: 10, left: 0, bottom: 20 }}>
                   <XAxis 
                     dataKey="name" 
                     stroke="#D8D9DA" 
@@ -104,8 +131,8 @@ export default function DashboardPage() {
                   />
                   <Tooltip 
                     contentStyle={{ 
-                      backgroundColor: '#22252B', 
-                      border: '1px solid #464646',
+                      backgroundColor: '#181B1F', 
+                      border: '1px solid #2c3235',
                       borderRadius: '4px',
                       color: '#D8D9DA'
                     }}
@@ -117,29 +144,34 @@ export default function DashboardPage() {
           </CardContent>
         </Card>
 
-        {/* Recent Sync Logs */}
-        <Card className="bg-grafana-dark-100 border-grafana-dark-200">
-          <CardHeader>
-            <CardTitle className="text-white text-lg">Recent Synchronizations</CardTitle>
+        {/* 最近の同期ログ */}
+        <Card className="bg-grafana-dark-200 border-grafana-dark-100">
+          <CardHeader className="pb-2">
+            <CardTitle className="text-white text-lg font-medium">最近の同期</CardTitle>
           </CardHeader>
           <CardContent>
             {isLoadingSyncLogs ? (
               <div className="space-y-4">
                 {[...Array(5)].map((_, i) => (
                   <div key={i} className="flex items-start space-x-3">
-                    <Skeleton className="h-10 w-10 rounded-full bg-grafana-dark-200" />
+                    <Skeleton className="h-10 w-10 rounded-full bg-grafana-dark-100" />
                     <div className="space-y-2">
-                      <Skeleton className="h-4 w-32 bg-grafana-dark-200" />
-                      <Skeleton className="h-3 w-24 bg-grafana-dark-200" />
+                      <Skeleton className="h-4 w-32 bg-grafana-dark-100" />
+                      <Skeleton className="h-3 w-24 bg-grafana-dark-100" />
                     </div>
                   </div>
                 ))}
               </div>
-            ) : syncLogs?.length > 0 ? (
+            ) : syncLogs && syncLogs.length > 0 ? (
               <div className="space-y-4">
-                {syncLogs.map((log) => (
-                  <div key={log.id} className="flex items-start border-b border-grafana-dark-200 pb-3 last:border-0">
-                    <div className={`p-2 rounded-full mr-3 ${log.status === 'success' ? 'bg-green-500/20 text-green-400' : 'bg-red-500/20 text-red-400'}`}>
+                {syncLogs.map((log: SyncLog) => (
+                  <div key={log.id} className="flex items-start border-b border-grafana-dark-100 pb-3 last:border-0">
+                    <div className={cn(
+                      "p-2 rounded-full mr-3",
+                      log.status === 'success' 
+                        ? "bg-grafana-green/20 text-grafana-green" 
+                        : "bg-grafana-error/20 text-grafana-error"
+                    )}>
                       {log.status === 'success' ? (
                         <ArrowUpRight className="h-5 w-5" />
                       ) : (
@@ -148,9 +180,12 @@ export default function DashboardPage() {
                     </div>
                     <div>
                       <p className="text-white font-medium text-sm">
-                        {log.type === 'opoppo_to_db' ? 'Opoppo Sync' : 
-                         log.type === 'grafana_full_sync' ? 'Grafana Sync' : 
-                         log.type === 'db_to_grafana' ? 'Database to Grafana' : 
+                        {log.type === 'opoppo_to_db' ? 'Opoppo同期' : 
+                         log.type === 'grafana_full_sync' ? 'Grafana全体同期' : 
+                         log.type === 'db_to_grafana' ? 'DB→Grafana同期' : 
+                         log.type === 'grafana_users_sync' ? 'ユーザー同期' :
+                         log.type === 'grafana_orgs_sync' ? '組織同期' :
+                         log.type === 'grafana_teams_sync' ? 'チーム同期' :
                          log.type}
                       </p>
                       <p className="text-xs text-grafana-text">
@@ -161,26 +196,26 @@ export default function DashboardPage() {
                 ))}
               </div>
             ) : (
-              <p className="text-grafana-text text-center py-6">No synchronization logs found</p>
+              <p className="text-grafana-text text-center py-6">同期ログが見つかりません</p>
             )}
           </CardContent>
         </Card>
       </div>
 
-      {/* Teams Overview */}
-      <Card className="bg-grafana-dark-100 border-grafana-dark-200">
-        <CardHeader>
-          <CardTitle className="text-white text-lg">Teams Overview</CardTitle>
+      {/* チーム概要 */}
+      <Card className="bg-grafana-dark-200 border-grafana-dark-100">
+        <CardHeader className="pb-2">
+          <CardTitle className="text-white text-lg font-medium">チーム概要</CardTitle>
         </CardHeader>
         <CardContent>
           <div className="overflow-x-auto grafana-scrollbar">
             <table className="w-full text-left">
               <thead>
-                <tr className="border-b border-grafana-dark-200">
-                  <th className="px-4 py-3 text-grafana-text font-medium text-sm">Team</th>
-                  <th className="px-4 py-3 text-grafana-text font-medium text-sm">Organization</th>
-                  <th className="px-4 py-3 text-grafana-text font-medium text-sm">Members</th>
-                  <th className="px-4 py-3 text-grafana-text font-medium text-sm">Email</th>
+                <tr className="border-b border-grafana-dark-100">
+                  <th className="px-4 py-3 text-grafana-text font-medium text-sm">チーム</th>
+                  <th className="px-4 py-3 text-grafana-text font-medium text-sm">組織</th>
+                  <th className="px-4 py-3 text-grafana-text font-medium text-sm">メンバー数</th>
+                  <th className="px-4 py-3 text-grafana-text font-medium text-sm">メールアドレス</th>
                 </tr>
               </thead>
               <tbody>
@@ -190,10 +225,10 @@ export default function DashboardPage() {
                   {id: 3, name: 'Design', org: 'Marketing', members: 6, email: 'design@example.com'},
                   {id: 4, name: 'Data Analytics', org: 'Finance', members: 4, email: 'analytics@example.com'},
                 ].map((team) => (
-                  <tr key={team.id} className="border-b border-grafana-dark-200 hover:bg-grafana-dark-200/50 transition-colors">
+                  <tr key={team.id} className="border-b border-grafana-dark-100 hover:bg-grafana-dark-100/50 transition-colors">
                     <td className="px-4 py-3">
                       <div className="flex items-center">
-                        <div className="w-8 h-8 rounded-full bg-purple-500/20 flex items-center justify-center text-purple-400 mr-2">
+                        <div className="w-8 h-8 rounded-full bg-grafana-orange/20 flex items-center justify-center text-grafana-orange mr-2">
                           <Users className="h-4 w-4" />
                         </div>
                         <span className="text-white font-medium">{team.name}</span>
@@ -211,4 +246,6 @@ export default function DashboardPage() {
       </Card>
     </MainLayout>
   );
-}
+};
+
+export default DashboardPage;
