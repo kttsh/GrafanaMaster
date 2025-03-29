@@ -11,8 +11,9 @@ import SyncPage from "@/pages/sync-page";
 
 /**
  * アプリケーションのルートルーター
+ * React 19では関数コンポーネントはarrow functionでの定義が推奨されています
  */
-function Router() {
+const Router = () => {
   return (
     <Switch>
       <Route path="/" component={DashboardPage} />
@@ -24,12 +25,13 @@ function Router() {
       <Route component={NotFound} />
     </Switch>
   );
-}
+};
 
 /**
  * メインアプリケーションコンポーネント
+ * React 19では関数コンポーネントはarrow functionでの定義が推奨されています
  */
-function App() {
+const App = () => {
   return (
     <div className="dark">
       <QueryClientProvider client={queryClient}>
@@ -38,6 +40,6 @@ function App() {
       </QueryClientProvider>
     </div>
   );
-}
+};
 
 export default App;
