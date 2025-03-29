@@ -64,13 +64,13 @@ const Header = ({
                   <ChevronDown className="h-4 w-4" />
                 </Button>
               </DropdownMenuTrigger>
-              <DropdownMenuContent align="start" className="bg-grafana-dark-200 border-grafana-dark-100 text-grafana-text">
+              <DropdownMenuContent align="start" className="bg-grafana-dark-200 border-grafana-dark-100 text-grafana-text z-50">
                 <DropdownMenuLabel>組織の切り替え</DropdownMenuLabel>
                 <DropdownMenuSeparator className="bg-grafana-dark-100" />
                 {orgs.map((org) => (
                   <DropdownMenuItem 
                     key={org.id}
-                    onClick={() => onOrgChange?.(org.id)}
+                    onSelect={() => onOrgChange?.(org.id)}
                     className={cn(
                       "cursor-pointer hover:bg-grafana-dark-100 hover:text-white",
                       org.name === selectedOrg && "text-grafana-orange font-medium"
@@ -106,30 +106,35 @@ const Header = ({
         
         {/* User Menu */}
         {user && (
-          <DropdownMenu>
-            <DropdownMenuTrigger asChild>
-              <Button variant="ghost" size="sm" className="h-8 flex items-center gap-2 hover:bg-grafana-dark-100">
-                <Avatar className="h-7 w-7 bg-grafana-dark-100">
-                  <AvatarFallback className="bg-grafana-orange text-white text-xs">
-                    {user.username.substring(0, 2).toUpperCase()}
-                  </AvatarFallback>
-                </Avatar>
-                <span className="hidden md:inline-block text-grafana-text text-sm">{user.username}</span>
-                <ChevronDown className="h-4 w-4 text-grafana-text" />
-              </Button>
-            </DropdownMenuTrigger>
-            <DropdownMenuContent align="end" className="bg-grafana-dark-200 border-grafana-dark-100 text-grafana-text">
-              <DropdownMenuLabel>マイアカウント</DropdownMenuLabel>
-              <DropdownMenuSeparator className="bg-grafana-dark-100" />
-              <DropdownMenuItem 
-                onClick={handleLogout}
-                className="cursor-pointer hover:bg-grafana-dark-100 hover:text-white focus:bg-grafana-dark-100 focus:text-white"
+          <div className="relative">
+            <DropdownMenu>
+              <DropdownMenuTrigger asChild>
+                <Button variant="ghost" size="sm" className="h-8 flex items-center gap-2 hover:bg-grafana-dark-100">
+                  <Avatar className="h-7 w-7 bg-grafana-dark-100">
+                    <AvatarFallback className="bg-grafana-orange text-white text-xs">
+                      {user.username.substring(0, 2).toUpperCase()}
+                    </AvatarFallback>
+                  </Avatar>
+                  <span className="hidden md:inline-block text-grafana-text text-sm">{user.username}</span>
+                  <ChevronDown className="h-4 w-4 text-grafana-text" />
+                </Button>
+              </DropdownMenuTrigger>
+              <DropdownMenuContent 
+                align="end" 
+                className="bg-grafana-dark-200 border-grafana-dark-100 text-grafana-text z-50"
               >
-                <LogOut className="mr-2 h-4 w-4" />
-                <span>ログアウト</span>
-              </DropdownMenuItem>
-            </DropdownMenuContent>
-          </DropdownMenu>
+                <DropdownMenuLabel>マイアカウント</DropdownMenuLabel>
+                <DropdownMenuSeparator className="bg-grafana-dark-100" />
+                <DropdownMenuItem 
+                  onSelect={handleLogout}
+                  className="cursor-pointer"
+                >
+                  <LogOut className="mr-2 h-4 w-4" />
+                  <span>ログアウト</span>
+                </DropdownMenuItem>
+              </DropdownMenuContent>
+            </DropdownMenu>
+          </div>
         )}
       </div>
     </header>

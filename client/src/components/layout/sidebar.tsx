@@ -71,11 +71,11 @@ const Sidebar = ({ onSyncClick, isSyncing = false }: SidebarProps) => {
       <ScrollArea className="flex-1">
         <nav className="p-2 pt-4 h-full flex flex-col">
           <TooltipProvider>
-            <ul className="space-y-2">
+            <ul className="space-y-2 list-none p-0 m-0">
               {navItems.map((item) => {
                 const isActive = location === item.href;
                 return (
-                  <li key={item.href}>
+                  <li key={item.href} className="p-0 m-0">
                     <Tooltip delayDuration={300}>
                       <TooltipTrigger asChild>
                         <Link 
@@ -89,7 +89,7 @@ const Sidebar = ({ onSyncClick, isSyncing = false }: SidebarProps) => {
                           <span className="hidden md:inline-block">{item.title}</span>
                         </Link>
                       </TooltipTrigger>
-                      <TooltipContent side="right" className="md:hidden bg-grafana-dark-100 border-grafana-dark-100 text-grafana-text">
+                      <TooltipContent side="right" className="md:hidden bg-grafana-dark-100 border-grafana-dark-100 text-grafana-text z-50">
                         <div className="flex flex-col">
                           <span className="font-medium">{item.title}</span>
                           <span className="text-xs text-grafana-text/70">{item.description}</span>

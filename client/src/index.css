@@ -13,6 +13,39 @@
     background-color: #181B1F; /* grafana-dark */
     color: #D8D9DA; /* grafana-text */
   }
+  
+  /* サイドバーメニューのリストスタイルを消す */
+  ul {
+    list-style-type: none;
+    margin: 0;
+    padding: 0;
+  }
+  
+  /* ドロップダウンメニューのスタイルを修正 */
+  .DropdownMenuContent {
+    z-index: 50;
+  }
+}
+
+@layer components {
+  /* ステータスカード用のグリッドスタイル */
+  .status-card-grid {
+    display: grid;
+    grid-template-columns: repeat(1, minmax(0, 1fr));
+    gap: 1rem;
+  }
+  
+  @screen sm {
+    .status-card-grid {
+      grid-template-columns: repeat(2, minmax(0, 1fr));
+    }
+  }
+  
+  @screen lg {
+    .status-card-grid {
+      grid-template-columns: repeat(4, minmax(0, 1fr));
+    }
+  }
 }
 
 @layer utilities {

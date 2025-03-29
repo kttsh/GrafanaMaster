@@ -75,7 +75,7 @@ const DashboardPage = () => {
       subtitle="Grafanaマスター管理システムの概要"
     >
       {/* ステータスカード */}
-      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 mb-6">
+      <div className="status-card-grid mb-6">
         <StatusCard
           title="ユーザー総数"
           value={isLoading ? "-" : stats?.totalUsers || 0}
