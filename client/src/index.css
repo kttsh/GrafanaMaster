@@ -4,11 +4,14 @@
 
 @layer base {
   * {
-    @apply border-border;
+    @apply border-[hsl(var(--border))];
   }
 
   body {
-    @apply font-sans antialiased bg-grafana-dark text-grafana-text;
+    font-family: ui-sans-serif, system-ui, sans-serif;
+    @apply antialiased;
+    background-color: #181B1F; /* grafana-dark */
+    color: #D8D9DA; /* grafana-text */
   }
 }
 
